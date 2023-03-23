@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name='microagg1d',
-    version='0.1.2',
+    version='0.1.3',
     packages=['microagg1d', 'microagg1d.tests'],
     author='Felix Stamm',
     author_email='felix.stamm@cssh.rwth-aachen.de',

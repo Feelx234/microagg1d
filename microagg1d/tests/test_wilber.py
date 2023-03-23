@@ -79,9 +79,37 @@ class TestArray(Test8Elements):
             8 : np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
         }
 
+# Testing ranges because they sometimes have no unique solution
+class TestRange5(Test8Elements):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.arr = np.arange(5, dtype=np.float64)
+        self.solutions = {
+            1 : np.arange(5),
+            2 : np.array([0, 0, 1, 1, 1]),
+        }
+
+class TestRange6(Test8Elements):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.arr = np.arange(6, dtype=np.float64)
+        self.solutions = {
+            1 : np.arange(6),
+            2 : np.array([0, 0, 1, 1, 2, 2]),
+        }
+
+class TestRange7(Test8Elements):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.arr = np.arange(7, dtype=np.float64)
+        self.solutions = {
+            1 : np.arange(7),
+            2 : np.array([0, 0, 1, 1, 2, 2, 2]),
+        }
 
 class TestAgreement(Test8Elements):
     def test_1(self):
+        # test in which cluster cost is the same but clustering is not the same!
         np.random.seed(0)
         arr = np.random.rand(1_000_000)
         arr.sort()
@@ -90,8 +118,11 @@ class TestAgreement(Test8Elements):
 
         cost1 = compute_cluster_cost_sorted(arr, result1)
         cost2 = compute_cluster_cost_sorted(arr, result2)
+
+
         self.assertEqual(cost1, cost2)
-        #assert_array_equal(result1, result2)
+        with self.assertRaises(AssertionError):
+            assert_array_equal(result1, result2)
 
 
 
