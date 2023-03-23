@@ -4,6 +4,13 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from microagg1d.main import optimal_univariate_microaggregation_1d, undo_argsort
 
+# use with k=5
+interesting_arr = np.array([1.14374817e-04, 2.73875932e-02, 9.23385948e-02, 1.46755891e-01,
+       1.86260211e-01, 2.04452250e-01, 3.02332573e-01, 3.45560727e-01,
+       3.96767474e-01, 4.17022005e-01, 4.19194514e-01, 5.38816734e-01,
+       6.85219500e-01, 7.20324493e-01, 8.78117436e-01])
+
+
 def get_random_arr(seed, n):
     np.random.seed(seed)
     x = np.random.rand(100)
@@ -51,5 +58,7 @@ class RegularizedKmeans(unittest.TestCase):
 
         print(clusters)   # [1 0 0 0 1 0 1]
         np.testing.assert_array_equal(clusters, [1, 0, 0, 0, 1, 0, 1], f"k={k}")
+
+
 if __name__ == '__main__':
     unittest.main()

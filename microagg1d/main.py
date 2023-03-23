@@ -1,35 +1,16 @@
 import numpy as np
 from numba import njit, float64, int64
 from numba.experimental import jitclass
+from microagg1d.wilber import Wilber
+from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_inclusive
+
 
 USE_CACHE=True
 
-@njit([(float64[:],)], cache=USE_CACHE)
-def calc_cumsum(v):
-    cumsum = np.empty(len(v)+1, dtype=np.float64)
-    cumsum[0]=0
-    cumsum[1:] = np.cumsum(v)
-    return cumsum
-
-@njit([(float64[:],)], cache=USE_CACHE)
-def calc_cumsum2(v):
-    cumsum2 = np.empty(len(v)+1, dtype=np.float64)
-    cumsum2[0]=0
-    cumsum2[1:] = np.cumsum(np.square(v))
-    return cumsum2
 
 
 
-@njit([(float64[:], float64[:], int64, int64)], cache=USE_CACHE)
-def calc_objective(cumsum, cumsum2, i, j):
-    if j <= i:
-        return 0.0
-#            raise ValueError("j should never be larger than i")
-    mu = (cumsum[j+1]-cumsum[i])/(j-i+1)
-    result = cumsum2[j + 1] - cumsum2[i]
-    result += (j - i + 1) * (mu * mu)
-    result -= (2 * mu) * (cumsum[j + 1] - cumsum[i])
-    return result
+
 
 
 @jitclass([('cumsum', float64[:]), ('cumsum2', float64[:])])
@@ -39,13 +20,29 @@ class CumsumCalculator:
         self.cumsum2 = calc_cumsum2(v)
 
     def calc(self, i, j):
-        return calc_objective(self.cumsum, self.cumsum2, i, j)
+        return calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j)
+
+@njit
+def compute_cluster_cost_sorted(v, clusters_sorted):
+    calculator = CumsumCalculator(v)
+    s = 0.0
+    i = 0
+    j = 1
+    while j < len(v):
+        while clusters_sorted[j]==clusters_sorted[i] and  j < len(v):
+            j+=1
+        s+=calculator.calc(i, j-1)
+        i=j
+        j=i+1
+    return s
+
+
 
 
 @njit(cache=USE_CACHE)
 def calc_num_clusters(result):
     """Compute the number of clusters encoded in results
-    Can be used on e.g. the result of _conventional_algorithm, Weber
+    Can be used on e.g. _optimal_univariate_microaggregation
     """
     num_clusters = 0
     curr_pos = len(result)-1
@@ -70,13 +67,13 @@ def relabel_clusters(result):
 
 
 @njit(cache=USE_CACHE)
-def _optimal_univariate_microaggregation(x, k):
+def _simple_dynamic_program(x, k):
     n = len(x)
     assert k > 0
     if n//2 < k: # there can only be one cluster
         return np.zeros(n, dtype=np.int64)
     if k==1: # each node has its own cluster
-       return np.arange(n)
+        return np.arange(n)
     calculator = CumsumCalculator(x)
 
 
@@ -109,22 +106,35 @@ def _optimal_univariate_microaggregation(x, k):
 
 
 
-def undo_argsort(sorted_arr, order):
-    revert = np.empty_like(order)
-    revert[order]=np.arange(len(sorted_arr))
+def undo_argsort(sorted_arr, sort_order):
+    """Puts the sorted_array which was sorted with sort_order back into the original order"""
+    revert = np.empty_like(sort_order)
+    revert[sort_order]=np.arange(len(sorted_arr))
     return sorted_arr[revert]
 
 
 
-def optimal_univariate_microaggregation_1d(x, k):
+def optimal_univariate_microaggregation_1d(x, k, method="auto"):
     """Performs optimal 1d univariate microaggregation"""
     x = np.squeeze(np.asarray(x))
     assert len(x.shape)==1, "provided array is not 1d"
     assert k > 0, f"negative or zero values for k({k}) are not supported"
     assert k <= len(x), f"values of k({k}) larger than the length of the provided array ({len(x)}) are not supported"
 
+    assert method in ("auto", "simple", "wilber"), "invalid method supplied"
+    if method == "auto":
+        if k <= 35: # 35 determined emperically
+            method = "simple"
+        else:
+            method = "wilber"
+
     order = np.argsort(x)
     x = np.array(x, dtype=np.float64)[order]
 
-    clusters = _optimal_univariate_microaggregation(x, k)
+    if method=="simple":
+        clusters = _simple_dynamic_program(x, k)
+    elif method=="wilber":
+        clusters = Wilber(x, k)
+    else:
+        raise NotImplementedError("Should not be reachable")
     return undo_argsort(clusters, order)
