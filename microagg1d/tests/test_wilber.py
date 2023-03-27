@@ -1,10 +1,11 @@
 
 import unittest
+from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
-from microagg1d.wilber import conventional_algorithm, Wilber, _Wilber, Wilber_edu
+from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu
 from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program, compute_cluster_cost_sorted
-from functools import partial
+
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
@@ -29,11 +30,14 @@ class Test8Elements(unittest.TestCase):
     def test_conventional_algorithm_full(self):
         my_test_algorithm(self, partial(conventional_algorithm, full=True, should_print=False))
 
-    def test_Wilber(self):
-        my_test_algorithm(self, Wilber)
+    def test_wilber(self):
+        my_test_algorithm(self, wilber)
 
-    def test__Wilber(self):
-        my_test_algorithm(self, partial(_Wilber, stable=False))
+    def test__wilber(self):
+        my_test_algorithm(self, partial(_wilber, stable=False))
+
+    def test__wilber_stable(self):
+        my_test_algorithm(self, partial(_wilber, stable=True))
 
     def test__simple_dynamic_program(self):
         my_test_algorithm(self, _simple_dynamic_program)
@@ -41,8 +45,8 @@ class Test8Elements(unittest.TestCase):
     def test__simple_dynamic_program_stable(self):
         my_test_algorithm(self, partial(_simple_dynamic_program, stable=True))
 
-    def test_Wilber_edu(self):
-        my_test_algorithm(self, partial(Wilber_edu, should_print=False))
+    def test_wilber_edu(self):
+        my_test_algorithm(self, partial(wilber_edu, should_print=False))
 
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="simple"))
@@ -116,7 +120,7 @@ class TestRange7(Test8Elements):
 def test_agreement(self, arr, k):
     arr.sort()
 
-    result1 = Wilber(arr.copy(), k)
+    result1 = wilber(arr.copy(), k)
     result2 = _simple_dynamic_program(arr.copy(), k)
 
     cost1 = compute_cluster_cost_sorted(arr, result1)
@@ -125,12 +129,12 @@ def test_agreement(self, arr, k):
 
     assert_array_equal(result1, result2)
 
-    print(result1)
-    print(result2)
+    #print(result1)
+    #print(result2)
 
 
 class TestAgreement(Test8Elements):
-    """Tests to ensure that _simple_dynamic_program and Wilber produce the same clusterings
+    """Tests to ensure that _simple_dynamic_program and wilber produce the same clusterings
     but clusterings were not the same!
     """
     def test_1(self):
@@ -144,7 +148,7 @@ class TestAgreement(Test8Elements):
         test_agreement(self, arr, k=2)
 
     def test_3(self):
-        result = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, True)
+        result = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
         expected_result = np.repeat(np.arange(250_000), 2)
         assert_array_equal(result, expected_result)
 
@@ -153,7 +157,10 @@ class TestAgreement(Test8Elements):
             result2 = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
             assert_array_equal(result2, expected_result)
 
+        result3 = _wilber(np.arange(500_000, dtype=np.float64), 2, stable=True)
+        assert_array_equal(result3, expected_result)
 
+# n=1000000 seed=0 k=5 does not agree!
 
 
 if __name__ == '__main__':

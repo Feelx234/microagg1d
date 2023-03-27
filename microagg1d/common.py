@@ -11,13 +11,6 @@ def calc_cumsum(v):
     cumsum[1:] = np.cumsum(v)
     return cumsum
 
-@njit([(float64[:],)], cache=USE_CACHE)
-def calc_cumsum2(v):
-    cumsum2 = np.empty(len(v)+1, dtype=np.float64)
-    cumsum2[0]=0
-    cumsum2[1:] = np.cumsum(np.square(v))
-    return cumsum2
-
 
 @njit([(float64, float64, int64)], cache=USE_CACHE)
 def _calc_objective(val1, val2, n):
@@ -99,3 +92,15 @@ def calc_objective_upper_inclusive_2(i_cumsum, i_cumsum2, j_cumsum, j_cumsum2,  
     result += (j - i + 1+ cell_size) * (mu * mu)
     #print("\t", result)
     return max(result, 0.0)
+
+@njit([(float64[:,:], float64[:,:], int64, int64, int64)], cache=USE_CACHE)
+def calc_objective_cell(cumsum, cumsum2, cell_size, i, j):
+    assert j>=i
+    assert j - i < 2 * cell_size
+
+    cell_i, remainder_i = divmod(i, cell_size)
+    cell_j, remainder_j = divmod(j, cell_size)
+    if cell_i  == cell_j: # both are in one cell
+        return calc_objective_upper_inclusive(cumsum[cell_i,:], cumsum2[cell_i,:], remainder_i, remainder_j)
+    else:
+        return calc_objective_upper_inclusive_2(cumsum[cell_i,:], cumsum2[cell_i,:], cumsum[cell_j,:], cumsum2[cell_j,:], remainder_i, remainder_j)

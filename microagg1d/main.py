@@ -1,8 +1,8 @@
 import numpy as np
 from numba import njit, float64, int64
 from numba.experimental import jitclass
-from microagg1d.wilber import Wilber
-from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_inclusive, calc_objective_upper_inclusive_2, calc_cumsum_cell
+from microagg1d.wilber import wilber
+from microagg1d.common import calc_cumsum, calc_objective_upper_inclusive, calc_objective_cell, calc_cumsum_cell
 
 
 USE_CACHE=True
@@ -17,7 +17,7 @@ USE_CACHE=True
 class CumsumCalculator:
     def __init__(self, v):
         self.cumsum = calc_cumsum(v)
-        self.cumsum2 = calc_cumsum2(v)
+        self.cumsum2 = calc_cumsum(np.square(v))
 
     def calc(self, i, j):
         return calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j)
@@ -77,16 +77,8 @@ class StableCumsumCalculator:
     def calc(self, i, j):
         if j==i:
             return 0
-        assert j>i
-        assert j - i < 2 * self.cell_size
+        return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j)
 
-
-        cell_i, remainder_i = divmod(i, self.cell_size)
-        cell_j, remainder_j = divmod(j, self.cell_size)
-        if cell_i  == cell_j: # both are in one cell
-            return calc_objective_upper_inclusive(self.cumsum[cell_i,:], self.cumsum2[cell_i,:], remainder_i, remainder_j)
-        else:
-            return calc_objective_upper_inclusive_2(self.cumsum[cell_i,:], self.cumsum2[cell_i,:], self.cumsum[cell_j,:], self.cumsum2[cell_j,:], remainder_i, remainder_j)
 
 
 @njit(cache=USE_CACHE)
@@ -153,7 +145,7 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=False):
 
     assert method in ("auto", "simple", "wilber"), "invalid method supplied"
     if method == "auto":
-        if k <= 35: # 35 determined emperically
+        if k <= 21: # 21 determined emperically
             method = "simple"
         else:
             method = "wilber"
@@ -164,7 +156,7 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=False):
     if method=="simple":
         clusters = _simple_dynamic_program(x, k, stable=stable)
     elif method=="wilber":
-        clusters = Wilber(x, k)
+        clusters = wilber(x, k)
     else:
         raise NotImplementedError("Should not be reachable")
     return undo_argsort(clusters, order)

@@ -13,7 +13,7 @@ interesting_arr = np.array([1.14374817e-04, 2.73875932e-02, 9.23385948e-02, 1.46
 
 def get_random_arr(seed, n):
     np.random.seed(seed)
-    x = np.random.rand(100)
+    x = np.random.rand(n)
     order = np.argsort(x)
     x_sorted = x[order]
     return x, x_sorted, order
@@ -46,11 +46,11 @@ class RegularizedKmeans(unittest.TestCase):
 
     def test_microagg(self):
         for k, solution in zip(range(1, len(self.arr)+1), self.solutions):
-                result = optimal_univariate_microaggregation_1d(self.arr.copy(), k)
-                np.testing.assert_array_equal(solution, result, f"k={k}")
+            result = optimal_univariate_microaggregation_1d(self.arr.copy(), k)
+            np.testing.assert_array_equal(solution, result, f"k={k}")
 
     def test_example_usage(self):
-        import microagg1d
+        import microagg1d #pylint: disable=import-outside-toplevel
         x = [5, 1, 1, 1.1, 5, 1, 5]
         k = 3
 
@@ -58,6 +58,12 @@ class RegularizedKmeans(unittest.TestCase):
 
         print(clusters)   # [1 0 0 0 1 0 1]
         np.testing.assert_array_equal(clusters, [1, 0, 0, 0, 1, 0, 1], f"k={k}")
+        
+
+        # for large datasets, should increase numeric stability, but increases runtime
+        clusters_large = microagg1d.optimal_univariate_microaggregation_1d(np.arange(500_000), k=2, stable=True)
+
+        print(clusters_large)   # [     0      0      1 ... 249998 249999 249999]
 
 
 if __name__ == '__main__':
