@@ -33,7 +33,13 @@ class Test8Elements(unittest.TestCase):
         my_test_algorithm(self, Wilber)
 
     def test__Wilber(self):
-        my_test_algorithm(self, _Wilber)
+        my_test_algorithm(self, partial(_Wilber, stable=False))
+
+    def test__simple_dynamic_program(self):
+        my_test_algorithm(self, _simple_dynamic_program)
+
+    def test__simple_dynamic_program_stable(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program, stable=True))
 
     def test_Wilber_edu(self):
         my_test_algorithm(self, partial(Wilber_edu, should_print=False))
@@ -107,22 +113,45 @@ class TestRange7(Test8Elements):
             2 : np.array([0, 0, 1, 1, 2, 2, 2]),
         }
 
+def test_agreement(self, arr, k):
+    arr.sort()
+
+    result1 = Wilber(arr.copy(), k)
+    result2 = _simple_dynamic_program(arr.copy(), k)
+
+    cost1 = compute_cluster_cost_sorted(arr, result1)
+    cost2 = compute_cluster_cost_sorted(arr, result2)
+    self.assertEqual(cost1, cost2)
+
+    assert_array_equal(result1, result2)
+
+    print(result1)
+    print(result2)
+
+
 class TestAgreement(Test8Elements):
+    """Tests to ensure that _simple_dynamic_program and Wilber produce the same clusterings
+    but clusterings were not the same!
+    """
     def test_1(self):
-        # test in which cluster cost is the same but clustering is not the same!
         np.random.seed(0)
         arr = np.random.rand(1_000_000)
-        arr.sort()
-        result1 = Wilber(arr, 2)
-        result2 = _simple_dynamic_program(arr, 2)
-
-        cost1 = compute_cluster_cost_sorted(arr, result1)
-        cost2 = compute_cluster_cost_sorted(arr, result2)
+        test_agreement(self, arr, k=2)
 
 
-        self.assertEqual(cost1, cost2)
-        with self.assertRaises(AssertionError):
-            assert_array_equal(result1, result2)
+    def test_2(self):
+        arr = np.arange(1000001, dtype=np.float64)
+        test_agreement(self, arr, k=2)
+
+    def test_3(self):
+        result = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, True)
+        expected_result = np.repeat(np.arange(250_000), 2)
+        assert_array_equal(result, expected_result)
+
+        with self.assertRaises(AssertionError): # weird test, but it makes sure that the stable version is still needed ...
+            # if this issue is resolved for the default algorithm, the stable version might be cut
+            result2 = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
+            assert_array_equal(result2, expected_result)
 
 
 

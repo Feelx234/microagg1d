@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit, float64, int64, bool_
 from numba.experimental import jitclass
 
-from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_exclusive, calc_objective_upper_inclusive
+from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_exclusive, calc_objective_upper_inclusive, calc_objective_upper_inclusive_2, calc_cumsum_cell, _calc_objective
 USE_CACHE=True
 
 @njit(cache=USE_CACHE)
@@ -143,11 +143,13 @@ def __Wilber(n, wil_calculator):
         j0=p+1
         for j in range(c+2, p+1):
             #print("<< j",j, H_vals[j], F_vals[j])
-            if H_vals[j] <= F_vals[j]:
+            if H_vals[j] < F_vals[j]:
                 F[j-1] = H[j-1]
                 j0 = j
                 break
         if j0==p+1: # we were right all along
+            # F_vals up to p (inclusive) are correct
+            r = F[p-1]
             c = p
         else: # our guessing strategy failed
             F_vals[j0] = H_vals[j0]
@@ -238,6 +240,31 @@ class MicroaggWilberCalculator:
         return calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j) + self.F_vals[i]
 
 
+
+@jitclass([('cumsum', float64[:,:]), ('cumsum2', float64[:,:]), ('k', int64), ("F_vals", float64[:]), ("SMALL_VAL", float64), ("LARGE_VAL", float64)])
+class StableMicroaggWilberCalculator:
+    """An educational variant of the microagg calculator which keeps track of all the states visited in matrix G"""
+    def __init__(self, x, k, F_vals, cell_size):
+        self.cumsum = calc_cumsum_cell(x, cell_size)
+        x_square = np.square(x)
+        self.cumsum2 = calc_cumsum_cell(x_square, cell_size)
+        self.k = k
+        self.F_vals = F_vals
+        n = len(self.cumsum) - 1
+        self.SMALL_VAL = _calc_objective(np.sum(x), np.sum(x_square), n)
+        self.LARGE_VAL = self.SMALL_VAL * (1 + n)
+
+    def calc(self, j, i): # i <-> j interchanged is not a bug!
+        if j < i:
+            return np.inf
+
+        if not (j+1 - i >= self.k):
+            return self.LARGE_VAL + self.SMALL_VAL*i
+        if not (j+1 - i <= 2 * self.k - 1):
+            return self.LARGE_VAL - self.SMALL_VAL*i
+        return 0.0#calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j) + self.F_vals[i]
+
+
 def Wilber_edu(v, k, should_print=True):
     result, G  = _Wilber_edu(v, k)
     if should_print:
@@ -250,22 +277,29 @@ def _Wilber_edu(v, k):
     n = len(v)
     cumsum = calc_cumsum(v)
     cumsum2 = calc_cumsum2(v)
-    wil_calculator = MicroaggWilberCalculator_edu(cumsum, cumsum2, k, -np.ones(n+1, dtype=np.float64))
+    wil_calculator = MicroaggWilberCalculator_edu(cumsum, cumsum2, k, np.empty(n+1, dtype=np.float64))
 
     result = __Wilber(n, wil_calculator)
     return result, wil_calculator.G
 
-@njit([(float64[:], int64)], cache=USE_CACHE)
-def _Wilber(v, k):
+@njit([(float64[:], int64, bool_)], cache=USE_CACHE)
+def _Wilber(v, k, stable=False):
     n = len(v)
-    cumsum = calc_cumsum(v)
-    cumsum2 = calc_cumsum2(v)
-    wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, -np.ones(n+1, dtype=np.float64))
+    if stable:
+        wil_calculator = StableMicroaggWilberCalculator(v, k, np.empty(n+1, dtype=np.float64), k)
+        return relabel_clusters_plus_one(__Wilber(n, wil_calculator))
+    else:
+        cumsum = calc_cumsum(v)
+        cumsum2 = calc_cumsum2(v)
+        wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, np.empty(n+1, dtype=np.float64))
+        return relabel_clusters_plus_one(__Wilber(n, wil_calculator))
 
-    return relabel_clusters_plus_one(__Wilber(n, wil_calculator))
 
 
-def Wilber(arr, k : int):
+
+
+
+def Wilber(arr, k : int, stable=False):
     """Solves the REGULARIZED 1d kmeans problem in O(n)
     this is an implementation of the proposed algorithm
     from "The concave least weight subsequence problem revisited" by Robert Wilber 1987
@@ -276,4 +310,4 @@ def Wilber(arr, k : int):
     res = trivial_cases(len(arr), k)
     if not res is None:
         return res
-    return _Wilber(arr, k)
+    return _Wilber(arr, k, stable=stable)
