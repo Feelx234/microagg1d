@@ -52,18 +52,25 @@ class RegularizedKmeans(unittest.TestCase):
     def test_example_usage(self):
         import microagg1d #pylint: disable=import-outside-toplevel
         x = [5, 1, 1, 1.1, 5, 1, 5]
-        k = 3
 
-        clusters = microagg1d.optimal_univariate_microaggregation_1d(x, k)
+        clusters = microagg1d.optimal_univariate_microaggregation_1d(x, k=3)
 
         print(clusters)   # [1 0 0 0 1 0 1]
-        np.testing.assert_array_equal(clusters, [1, 0, 0, 0, 1, 0, 1], f"k={k}")
+        np.testing.assert_array_equal(clusters, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
         
 
-        # for large datasets, should increase numeric stability, but increases runtime
-        clusters_large = microagg1d.optimal_univariate_microaggregation_1d(np.arange(500_000), k=2, stable=True)
+        clusters2 = microagg1d.optimal_univariate_microaggregation_1d(x, k=3, method="wilber") # explicitly choose method
 
-        print(clusters_large)   # [     0      0      1 ... 249998 249999 249999]
+        print(clusters2)   # [1 0 0 0 1 0 1]
+
+        # may opt to get increased speed at cost of stability, this is usually not a problem on small datasets such as here
+        clusters3 = microagg1d.optimal_univariate_microaggregation_1d(x, k=3, stable=False)
+
+        print(clusters3)   # [1 0 0 0 1 0 1]
+
+        np.testing.assert_array_equal(clusters2, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
+
+        np.testing.assert_array_equal(clusters3, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
 
 
 if __name__ == '__main__':

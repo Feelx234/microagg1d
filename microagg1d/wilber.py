@@ -276,7 +276,7 @@ def _wilber_edu(v, k):
     return result, wil_calculator.G
 
 @njit([(float64[:], int64, bool_)], cache=USE_CACHE)
-def _wilber(v, k, stable=False):
+def _wilber(v, k, stable=True):
     n = len(v)
     if stable:
         wil_calculator = StableMicroaggWilberCalculator(v, k, np.empty(n+1, dtype=np.float64), k)
@@ -292,7 +292,7 @@ def _wilber(v, k, stable=False):
 
 
 
-def wilber(arr, k : int, stable=False):
+def wilber(arr, k : int, stable=True):
     """Solves the REGULARIZED 1d kmeans problem in O(n)
     this is an implementation of the proposed algorithm
     from "The concave least weight subsequence problem revisited" by Robert wilber 1987
