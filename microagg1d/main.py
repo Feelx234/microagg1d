@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit, float64, int64
 from numba.experimental import jitclass
 from microagg1d.wilber import Wilber
-from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_inclusive
+from microagg1d.common import calc_cumsum, calc_cumsum2, calc_objective_upper_inclusive, calc_objective_upper_inclusive_2, calc_cumsum_cell
 
 
 USE_CACHE=True
@@ -66,17 +66,47 @@ def relabel_clusters(result):
     return out
 
 
+
+@jitclass([('cumsum', float64[:,:]), ('cumsum2', float64[:,:]), ('cell_size', int64)])
+class StableCumsumCalculator:
+    def __init__(self, v, cell_size):
+        self.cumsum = calc_cumsum_cell(v, cell_size)
+        self.cumsum2 = calc_cumsum_cell(np.square(v), cell_size)
+        self.cell_size = cell_size
+
+    def calc(self, i, j):
+        if j==i:
+            return 0
+        assert j>i
+        assert j - i < 2 * self.cell_size
+
+
+        cell_i, remainder_i = divmod(i, self.cell_size)
+        cell_j, remainder_j = divmod(j, self.cell_size)
+        if cell_i  == cell_j: # both are in one cell
+            return calc_objective_upper_inclusive(self.cumsum[cell_i,:], self.cumsum2[cell_i,:], remainder_i, remainder_j)
+        else:
+            return calc_objective_upper_inclusive_2(self.cumsum[cell_i,:], self.cumsum2[cell_i,:], self.cumsum[cell_j,:], self.cumsum2[cell_j,:], remainder_i, remainder_j)
+
+
 @njit(cache=USE_CACHE)
-def _simple_dynamic_program(x, k):
+def _simple_dynamic_program(x, k, stable=False):
     n = len(x)
     assert k > 0
     if n//2 < k: # there can only be one cluster
         return np.zeros(n, dtype=np.int64)
     if k==1: # each node has its own cluster
         return np.arange(n)
-    calculator = CumsumCalculator(x)
 
+    if stable:
+        calculator = StableCumsumCalculator(x, k)
+        return __simple_dynamic_program(n, k, calculator)
+    else:
+        calculator = CumsumCalculator(x)
+        return __simple_dynamic_program(n, k, calculator)
 
+@njit(cache=False) # no caching as otherwise it would be recompiled often
+def __simple_dynamic_program(n, k, calculator):
     back_tracks =  np.zeros(n, dtype=np.int64)
     min_vals = np.zeros(n)
     for i in range(0, k-1):
@@ -114,7 +144,7 @@ def undo_argsort(sorted_arr, sort_order):
 
 
 
-def optimal_univariate_microaggregation_1d(x, k, method="auto"):
+def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=False):
     """Performs optimal 1d univariate microaggregation"""
     x = np.squeeze(np.asarray(x))
     assert len(x.shape)==1, "provided array is not 1d"
@@ -132,7 +162,7 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto"):
     x = np.array(x, dtype=np.float64)[order]
 
     if method=="simple":
-        clusters = _simple_dynamic_program(x, k)
+        clusters = _simple_dynamic_program(x, k, stable=stable)
     elif method=="wilber":
         clusters = Wilber(x, k)
     else:
