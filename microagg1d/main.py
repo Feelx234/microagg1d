@@ -82,7 +82,7 @@ class StableCumsumCalculator:
 
 
 @njit(cache=USE_CACHE)
-def _simple_dynamic_program(x, k, stable=True):
+def _simple_dynamic_program(x, k, stable=1):
     n = len(x)
     assert k > 0
     if n//2 < k: # there can only be one cluster
@@ -90,12 +90,14 @@ def _simple_dynamic_program(x, k, stable=True):
     if k==1: # each node has its own cluster
         return np.arange(n)
 
-    if stable:
+    if stable==1:
         calculator = StableCumsumCalculator(x, k)
         return __simple_dynamic_program(n, k, calculator)
-    else:
+    elif stable==0:
         calculator = CumsumCalculator(x)
         return __simple_dynamic_program(n, k, calculator)
+    else:
+        assert False
 
 @njit(cache=False) # no caching as otherwise it would be recompiled often
 def __simple_dynamic_program(n, k, calculator):
@@ -136,7 +138,7 @@ def undo_argsort(sorted_arr, sort_order):
 
 
 
-def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=True):
+def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1):
     """Performs optimal 1d univariate microaggregation"""
     x = np.squeeze(np.asarray(x))
     assert len(x.shape)==1, "provided array is not 1d"

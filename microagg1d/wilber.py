@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit, float64, int64, bool_
 from numba.experimental import jitclass
-from fast1dkmeans.smawk_iter import _smawk_iter
+from microagg1d.smawk_iter import _smawk_iter
 from microagg1d.common import calc_cumsum, calc_objective_upper_exclusive, calc_objective_upper_inclusive, calc_objective_cell, calc_cumsum_cell, _calc_objective
 USE_CACHE=True
 
@@ -275,24 +275,26 @@ def _wilber_edu(v, k):
     result = __wilber(n, wil_calculator)
     return result, wil_calculator.G
 
-@njit([(float64[:], int64, bool_)], cache=USE_CACHE)
-def _wilber(v, k, stable=True):
+@njit([(float64[:], int64, int64)], cache=USE_CACHE)
+def _wilber(v, k, stable=1):
     n = len(v)
-    if stable:
+    if stable==1:
         wil_calculator = StableMicroaggWilberCalculator(v, k, np.empty(n+1, dtype=np.float64), k)
         return relabel_clusters_plus_one(__wilber(n, wil_calculator))
-    else:
+    elif stable==0:
         cumsum = calc_cumsum(v)
         cumsum2 = calc_cumsum(np.square(v))
         wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, np.empty(n+1, dtype=np.float64))
         return relabel_clusters_plus_one(__wilber(n, wil_calculator))
+    else:
+        raise NotImplementedError("Only stable in (0,1) supported")
 
 
 
 
 
 
-def wilber(arr, k : int, stable=True):
+def wilber(arr, k : int, stable=1):
     """Solves the REGULARIZED 1d kmeans problem in O(n)
     this is an implementation of the proposed algorithm
     from "The concave least weight subsequence problem revisited" by Robert wilber 1987
