@@ -117,35 +117,37 @@ class TestRange7(Test8Elements):
             2 : np.array([0, 0, 1, 1, 2, 2, 2]),
         }
 
-def test_agreement(self, arr, k):
-    arr.sort()
 
-    result1 = wilber(arr.copy(), k)
-    result2 = _simple_dynamic_program(arr.copy(), k)
-
-    cost1 = compute_cluster_cost_sorted(arr, result1)
-    cost2 = compute_cluster_cost_sorted(arr, result2)
-    self.assertEqual(cost1, cost2)
-
-    assert_array_equal(result1, result2)
-
-    #print(result1)
-    #print(result2)
 
 
 class TestAgreement(Test8Elements):
     """Tests to ensure that _simple_dynamic_program and wilber produce the same clusterings
     but clusterings were not the same!
     """
+
+    def assert_agreement(self, arr, k):
+        arr.sort()
+
+        result1 = wilber(arr.copy(), k)
+        result2 = _simple_dynamic_program(arr.copy(), k)
+
+        cost1 = compute_cluster_cost_sorted(arr, result1)
+        cost2 = compute_cluster_cost_sorted(arr, result2)
+        self.assertEqual(cost1, cost2)
+
+        assert_array_equal(result1, result2)
+
+        #print(result1)
+        #print(result2)
     def test_1(self):
         np.random.seed(0)
         arr = np.random.rand(1_000_000)
-        test_agreement(self, arr, k=2)
+        self.assert_agreement(arr, k=2)
 
 
     def test_2(self):
         arr = np.arange(1000001, dtype=np.float64)
-        test_agreement(self, arr, k=2)
+        self.assert_agreement(arr, k=2)
 
     def test_3(self):
         result = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
