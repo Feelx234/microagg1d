@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit, float64, int64
 from numba.experimental import jitclass
-from microagg1d.wilber import wilber
+from microagg1d.wilber import wilber, _galil_park
 from microagg1d.common import calc_cumsum, calc_objective_upper_inclusive, calc_objective_cell, calc_cumsum_cell
 
 
@@ -145,7 +145,7 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1):
     assert k > 0, f"negative or zero values for k({k}) are not supported"
     assert k <= len(x), f"values of k({k}) larger than the length of the provided array ({len(x)}) are not supported"
 
-    assert method in ("auto", "simple", "wilber"), "invalid method supplied"
+    assert method in ("auto", "simple", "wilber", "galil_park"), "invalid method supplied"
     if method == "auto":
         if k <= 21: # 21 determined emperically
             method = "simple"
@@ -158,7 +158,9 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1):
     if method=="simple":
         clusters = _simple_dynamic_program(x, k, stable=stable)
     elif method=="wilber":
-        clusters = wilber(x, k)
+        clusters = wilber(x, k, stable=stable)
+    elif method=="galil_park":
+        clusters = _galil_park(x, k, stable=stable)
     else:
         raise NotImplementedError("Should not be reachable")
     return undo_argsort(clusters, order)

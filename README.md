@@ -8,7 +8,8 @@ A Python library which implements different techniques for optimal univariate mi
 Currently the package implements the following methods:
 - `"simple"` [O(nk), faster for small k]
 - `"wilber"` [O(n), faster for larger k]
-By default, the package switches between the two methods depending on the size of k.
+- `"galil_park"` [O(n), fewer calls to SMAWK]
+By default, the package switches between the simple and wilber method depending on the size of k.
 
 
 Both methods rely on a prefix sum approach to compute the cluster cost. As the prefix sums tend to become very large quite quickly, a slightly slower but numerically more robust method is chosen by default. If your data is small, or you don't need the numeric stability then you may choose to also opt out of stable.

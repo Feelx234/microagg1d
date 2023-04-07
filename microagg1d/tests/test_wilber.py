@@ -3,7 +3,7 @@ import unittest
 from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
-from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu
+from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu, _galil_park
 from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program, compute_cluster_cost_sorted
 
 
@@ -48,11 +48,20 @@ class Test8Elements(unittest.TestCase):
     def test_wilber_edu(self):
         my_test_algorithm(self, partial(wilber_edu, should_print=False))
 
+    def test_galil_park_stable_1(self):
+        my_test_algorithm(self, partial(_galil_park, stable=1))
+
+    def test_galil_park_stable_0(self):
+        my_test_algorithm(self, partial(_galil_park, stable=0))
+
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="simple"))
 
     def test_optimal_univariate_microaggregation_wilber(self):
         my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="wilber"))
+
+    def test_optimal_univariate_microaggregation_galil_park(self):
+        my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="galil_park"))
 
 
 
@@ -120,7 +129,7 @@ class TestRange7(Test8Elements):
 
 
 
-class TestAgreement(Test8Elements):
+class TestAgreement(unittest.TestCase):
     """Tests to ensure that _simple_dynamic_program and wilber produce the same clusterings
     but clusterings were not the same!
     """

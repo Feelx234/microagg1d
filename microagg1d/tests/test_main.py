@@ -57,7 +57,6 @@ class RegularizedKmeans(unittest.TestCase):
 
         print(clusters)   # [1 0 0 0 1 0 1]
         np.testing.assert_array_equal(clusters, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
-        
 
         clusters2 = microagg1d.optimal_univariate_microaggregation_1d(x, k=3, method="wilber") # explicitly choose method
 
