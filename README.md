@@ -9,6 +9,7 @@ Currently the package implements the following methods:
 - `"simple"` [O(nk), faster for small k]
 - `"wilber"` [O(n), faster for larger k]
 - `"galil_park"` [O(n), fewer calls to SMAWK]
+
 By default, the package switches between the simple and wilber method depending on the size of k.
 
 
@@ -73,3 +74,11 @@ The code in this repository has an BSD 2-Clause "Simplified" License.
 
 See [LICENSE](https://github.com/Feelx234/microagg1d/blob/master/LICENSE).
 
+
+
+References
+----------
+
+- Hansen, S.L. and Mukherjee, S., 2003. A polynomial algorithm for optimal univariate microaggregation. IEEE Transactions on Knowledge and Data Engineering
+- Wilber, R., 1988. The concave least-weight subsequence problem revisited. Journal of Algorithms, 9(3), pp.418-425.
+- Galil, Z. and Park, K., 1989. A linear-time algorithm for concave one-dimensional dynamic programming.
