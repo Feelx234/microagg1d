@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu, _galil_park
 from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program, compute_cluster_cost_sorted
-
+from microagg1d.wilber2 import wilber2
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
@@ -32,6 +32,9 @@ class Test8Elements(unittest.TestCase):
 
     def test_wilber(self):
         my_test_algorithm(self, wilber)
+
+    def test_wilber2(self):
+        my_test_algorithm(self, wilber2)
 
     def test__wilber(self):
         my_test_algorithm(self, partial(_wilber, stable=False))
