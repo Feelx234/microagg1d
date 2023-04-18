@@ -373,7 +373,7 @@ def __galil_park(n, wil_calculator):
     return F
 
 
-@njit([(float64[:], int64, int64)])
+@njit([(float64[:], int64, int64)], cache=USE_CACHE)
 def _galil_park(v, k, stable=1):
     n = len(v)
     if stable==1:

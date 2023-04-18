@@ -4,8 +4,8 @@ from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
 from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu, _galil_park
-from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program, compute_cluster_cost_sorted
-from microagg1d.wilber2 import wilber2
+from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program,  _simple_dynamic_program2, compute_cluster_cost_sorted
+from microagg1d.wilber2 import _galil_park2
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
@@ -33,9 +33,6 @@ class Test8Elements(unittest.TestCase):
     def test_wilber(self):
         my_test_algorithm(self, wilber)
 
-    def test_wilber2(self):
-        my_test_algorithm(self, wilber2)
-
     def test__wilber(self):
         my_test_algorithm(self, partial(_wilber, stable=False))
 
@@ -44,6 +41,12 @@ class Test8Elements(unittest.TestCase):
 
     def test__simple_dynamic_program(self):
         my_test_algorithm(self, _simple_dynamic_program)
+
+    def test__simple_dynamic_program2(self):
+        my_test_algorithm(self, _simple_dynamic_program2)
+
+    def test__simple_dynamic_program2_stable_1(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=1))
 
     def test__simple_dynamic_program_stable(self):
         my_test_algorithm(self, partial(_simple_dynamic_program, stable=True))
@@ -56,6 +59,9 @@ class Test8Elements(unittest.TestCase):
 
     def test_galil_park_stable_0(self):
         my_test_algorithm(self, partial(_galil_park, stable=0))
+
+    def test_galil_park2_stable_0(self):
+        my_test_algorithm(self, partial(_galil_park2, stable=0))
 
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="simple"))
