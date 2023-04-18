@@ -79,14 +79,13 @@ def calc_cumsum_cell(v, cell_size):
     return out
 
 
-@njit([(float64[:], float64[:], float64[:], float64[:], int64, int64)], cache=USE_CACHE)
-def calc_objective_upper_inclusive_2(i_cumsum, i_cumsum2, j_cumsum, j_cumsum2,  i, j):
+@njit([(float64, float64, float64, float64, int64, int64, int64)], cache=USE_CACHE)
+def calc_objective_upper_inclusive_2(i_cumsum, i_cumsum2, j_cumsum, j_cumsum2,  i, j, cell_size):
     """Compute the cluster cost of clustering points including both i and j across two cells"""
-    cell_size = len(i_cumsum)-1
-    val1 = j_cumsum[j + 1] + i_cumsum[cell_size] - i_cumsum[i]
+    val1 = j_cumsum + i_cumsum
     #print("\t", val1)
     mu = (val1)/(j + 1 + cell_size - i)
-    result = j_cumsum2[j + 1] + i_cumsum2[cell_size] - i_cumsum2[i]
+    result = j_cumsum2 + i_cumsum2
     #print("\t", result)
     result -= (2 * mu) * val1
     result += (j - i + 1+ cell_size) * (mu * mu)
@@ -95,12 +94,16 @@ def calc_objective_upper_inclusive_2(i_cumsum, i_cumsum2, j_cumsum, j_cumsum2,  
 
 @njit([(float64[:,:], float64[:,:], int64, int64, int64)], cache=USE_CACHE)
 def calc_objective_cell(cumsum, cumsum2, cell_size, i, j):
-    assert j>=i
-    assert j - i < 2 * cell_size
+    #assert j>=i
+    #assert j - i < 2 * cell_size
 
     cell_i, remainder_i = divmod(i, cell_size)
     cell_j, remainder_j = divmod(j, cell_size)
     if cell_i  == cell_j: # both are in one cell
         return calc_objective_upper_inclusive(cumsum[cell_i,:], cumsum2[cell_i,:], remainder_i, remainder_j)
     else:
-        return calc_objective_upper_inclusive_2(cumsum[cell_i,:], cumsum2[cell_i,:], cumsum[cell_j,:], cumsum2[cell_j,:], remainder_i, remainder_j)
+        return calc_objective_upper_inclusive_2(cumsum [cell_i, cell_size] - cumsum [cell_i, remainder_i],
+                                                cumsum2[cell_i, cell_size] - cumsum2[cell_i, remainder_i],
+                                                cumsum [cell_j, remainder_j + 1],
+                                                cumsum2[cell_j, remainder_j + 1],
+                                                remainder_i, remainder_j, cell_size)
