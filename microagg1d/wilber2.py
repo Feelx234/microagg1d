@@ -2,11 +2,12 @@ import numpy as np
 from numba import njit, int64, float64
 
 from microagg1d.smawk_iter2 import __smawk_iter
+from microagg1d.wilber import SimpleWilberCalculator
 
 USE_CACHE=True
 
 @njit()
-def __wilber2(n, wil_calculator):
+def __wilber2(n, wil_calculator, k):
     """Solves Univariate Microaggregation problem in O(n)
     this is an implementation of the proposed algorithm
     from "The concave least weight subsequence problem revisited" by Robert Wilber 1987
@@ -53,44 +54,12 @@ def __wilber2(n, wil_calculator):
 
     return F
 
-from microagg1d.wilber import StableMicroaggWilberCalculator, relabel_clusters_plus_one, calc_cumsum, MicroaggWilberCalculator, trivial_cases
-
-@njit([(float64[:], int64, int64)], cache=USE_CACHE)
-def _wilber2(v, k, stable=1):
-    n = len(v)
-    if stable==1:
-        wil_calculator = StableMicroaggWilberCalculator(v, k, np.empty(n+1, dtype=np.float64), k)
-        return relabel_clusters_plus_one(__wilber2(n, wil_calculator))
-    elif stable==0:
-        cumsum = calc_cumsum(v)
-        cumsum2 = calc_cumsum(np.square(v))
-        wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, np.empty(n+1, dtype=np.float64))
-        return relabel_clusters_plus_one(__wilber2(n, wil_calculator))
-    else:
-        raise NotImplementedError("Only stable in (0,1) supported")
-
-
-
-
-
-
-def wilber2(arr, k : int, stable=1):
-    """Solves the REGULARIZED 1d kmeans problem in O(n)
-    this is an implementation of the proposed algorithm
-    from "The concave least weight subsequence problem revisited" by Robert wilber 1987
-    """
-
-    assert k > 0
-    assert k <= len(arr)
-    res = trivial_cases(len(arr), k)
-    if not res is None:
-        return res
-    return _wilber2(arr, k, stable=stable)
+from microagg1d.wilber import StableMicroaggWilberCalculator, relabel_clusters_plus_one, calc_cumsum, MicroaggWilberCalculator
 
 
 
 @njit()
-def __galil_park2(n, wil_calculator):
+def __galil_park2(n, wil_calculator, k):
     """ Solves the dynamic problem in O(n)
     This is an implementation of the proposed algorithm
     from "A Linear-Time Algorithm for Concave One-Dimensional Dynamic Programming" by Zvi Galil and Kunsoo Park 1989
@@ -154,17 +123,122 @@ def __galil_park2(n, wil_calculator):
     return F
 
 
+
+
+
+@njit()
+def __staggered2(n, wil_calculator, k):
+    """ Solves the dynamic problem in O(n)
+    """
+    F = np.empty(n, dtype=np.int32)
+    F_vals = wil_calculator.F_vals
+    F_vals[0]=0
+    col_buffer = np.empty(2*n+2, dtype=np.int64)
+    col_starts = np.empty(2*n+2, dtype=np.int64)
+
+    # initial values
+    for i in range(k-1, min(2*k-1,n)):
+        F[i] = 0
+        F_vals[i+1] = wil_calculator.calc(i, 0)
+    if n<=2*k-1:
+        return F
+
+    def one_round(l, r, u, b):
+        __smawk_iter(l, r, u, b, wil_calculator, F, col_starts, col_buffer)
+        for j in range(l, r):
+            val = wil_calculator.calc(j, F[j])
+            F_vals[j+1]=val
+
+    # first block
+    max_col = min(3*k-1,n)
+    one_round(2*k-1, max_col, k, 2*k)
+    if n<=max_col:
+        return F
+
+    # remaining blocks
+    f, R = divmod(n-3*k+1,k)
+    j=3
+    for i in range(3,3+f): # do the main blocks
+        one_round(i*k-1, (i+1)*k-1, max(F[i*k-2], (i-2)*k), i*k)
+        j=i+1
+
+    if R>0: # deal with the remainder
+        one_round(j*k-1, (j)*k-1+R, max(F[j*k-2], (j-2)*k), (j-1)*k+R)
+
+    return F
+
+
+
+
+
+
+
+
+
+# def wilber2(arr, k : int, stable=1):
+#     """Solves the REGULARIZED 1d kmeans problem in O(n)
+#     this is an implementation of the proposed algorithm
+#     from "The concave least weight subsequence problem revisited" by Robert wilber 1987
+#     """
+#     return execute_linear2(__wilber2, arr, k, stable)
+
+
+
 @njit([(float64[:], int64, int64)], cache=USE_CACHE)
-def _galil_park2(v, k, stable=1):
+def _staggered2(v, k, stable=1):
+    method=__staggered2
     n = len(v)
+    if stable==2:
+        wil_calculator = SimpleWilberCalculator(calc_cumsum(v), k, -np.ones(n+1, dtype=np.float64))
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
     if stable==1:
         wil_calculator = StableMicroaggWilberCalculator(v, k, -np.ones(n+1, dtype=np.float64), 3*k)
-        return relabel_clusters_plus_one(__galil_park2(n, wil_calculator))
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
     elif stable==0:
         cumsum = calc_cumsum(v)
         cumsum2 = calc_cumsum(np.square(v))
         wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, -np.ones(n+1, dtype=np.float64))
-        out = __galil_park2(n, wil_calculator)
+        out = method(n, wil_calculator, k)
+        return relabel_clusters_plus_one(out)
+    else:
+        raise NotImplementedError("Only stable in (0,1) supported")
+
+
+@njit([(float64[:], int64, int64)], cache=USE_CACHE)
+def _galil_park2(v, k, stable=1):
+    method=__galil_park2
+    n = len(v)
+    if stable==2:
+        wil_calculator = SimpleWilberCalculator(calc_cumsum(v), k, -np.ones(n+1, dtype=np.float64))
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
+    if stable==1:
+        wil_calculator = StableMicroaggWilberCalculator(v, k, -np.ones(n+1, dtype=np.float64), 3*k)
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
+    elif stable==0:
+        cumsum = calc_cumsum(v)
+        cumsum2 = calc_cumsum(np.square(v))
+        wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, -np.ones(n+1, dtype=np.float64))
+        out = method(n, wil_calculator, k)
+        return relabel_clusters_plus_one(out)
+    else:
+        raise NotImplementedError("Only stable in (0,1) supported")
+
+
+@njit([(float64[:], int64, int64)], cache=USE_CACHE)
+def _wilber2(v, k, stable=1):
+    method=__wilber2
+    n = len(v)
+    if stable==2:
+        wil_calculator = SimpleWilberCalculator(calc_cumsum(v), k, -np.ones(n+1, dtype=np.float64))
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
+    if stable==1:
+        wil_calculator = StableMicroaggWilberCalculator(v, k, -np.ones(n+1, dtype=np.float64), 3*k)
+        return relabel_clusters_plus_one(method(n, wil_calculator, k))
+    elif stable==0:
+        cumsum = calc_cumsum(v)
+        cumsum2 = calc_cumsum(np.square(v))
+        wil_calculator = MicroaggWilberCalculator(cumsum, cumsum2, k, -np.ones(n+1, dtype=np.float64))
+        out = method(n, wil_calculator, k)
         return relabel_clusters_plus_one(out)
     else:
         raise NotImplementedError("Only stable in (0,1) supported")

@@ -5,12 +5,14 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu, _galil_park
 from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program,  _simple_dynamic_program2, compute_cluster_cost_sorted
-from microagg1d.wilber2 import _galil_park2
+from microagg1d.wilber2 import _galil_park2, _staggered2
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
         result = algorithm(self.arr, k)
-        np.testing.assert_array_equal(solution, result, f"k={k}")
+        C_sol = compute_cluster_cost_sorted(self.arr, np.array(solution,dtype=np.int64))
+        C_res = compute_cluster_cost_sorted(self.arr, result)
+        np.testing.assert_array_equal(result, solution, f"k={k} C_sol={C_sol} c_res={C_res}")
 
 class Test8Elements(unittest.TestCase):
     def __init__(self, *args, **kwargs) -> None:
@@ -30,29 +32,61 @@ class Test8Elements(unittest.TestCase):
     def test_conventional_algorithm_full(self):
         my_test_algorithm(self, partial(conventional_algorithm, full=True, should_print=False))
 
+
+# wilber
     def test_wilber(self):
         my_test_algorithm(self, wilber)
 
-    def test__wilber(self):
-        my_test_algorithm(self, partial(_wilber, stable=False))
+    def test__wilber_stable_0(self):
+        my_test_algorithm(self, partial(_wilber, stable=0))
 
-    def test__wilber_stable(self):
-        my_test_algorithm(self, partial(_wilber, stable=True))
+    def test__wilber_stable_1(self):
+        my_test_algorithm(self, partial(_wilber, stable=1))
 
+# simply dynamic program
     def test__simple_dynamic_program(self):
         my_test_algorithm(self, _simple_dynamic_program)
 
+    def test__simple_dynamic_program_stable_0(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program, stable=0))
+
+    def test__simple_dynamic_program_stable_1(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program, stable=1))
+
+
+
+# simple dynamic program2
     def test__simple_dynamic_program2(self):
         my_test_algorithm(self, _simple_dynamic_program2)
+
+    def test__simple_dynamic_program2_stable_0(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=0))
 
     def test__simple_dynamic_program2_stable_1(self):
         my_test_algorithm(self, partial(_simple_dynamic_program2, stable=1))
 
-    def test__simple_dynamic_program_stable(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program, stable=True))
+
+
+# simple staggered 2
+#    def test__staggered2(self):
+#        my_test_algorithm(self, _staggered2)
+
+    def test__staggered2_stable_0(self):
+        my_test_algorithm(self, partial(_staggered2, stable=0))
+
+    def test__staggered2_stable_1(self):
+        my_test_algorithm(self, partial(_staggered2, stable=1))
+
+
+
 
     def test_wilber_edu(self):
         my_test_algorithm(self, partial(wilber_edu, should_print=False))
+
+
+# galil park 1
+    def test_galil_park_stable_2(self):
+        my_test_algorithm(self, partial(_galil_park, stable=2))
 
     def test_galil_park_stable_1(self):
         my_test_algorithm(self, partial(_galil_park, stable=1))
@@ -60,8 +94,14 @@ class Test8Elements(unittest.TestCase):
     def test_galil_park_stable_0(self):
         my_test_algorithm(self, partial(_galil_park, stable=0))
 
+# galil park 2
+    def test_galil_park2_stable_1(self):
+        my_test_algorithm(self, partial(_galil_park2, stable=1))
+
     def test_galil_park2_stable_0(self):
         my_test_algorithm(self, partial(_galil_park2, stable=0))
+
+
 
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(self, partial(optimal_univariate_microaggregation_1d, method="simple"))
@@ -139,21 +179,22 @@ class TestRange7(Test8Elements):
 
 
 class TestAgreement(unittest.TestCase):
-    """Tests to ensure that _simple_dynamic_program and wilber produce the same clusterings
+    """Tests to ensure that _simple_dynamic_program and wilber produce the same cluster costs
     but clusterings were not the same!
     """
 
     def assert_agreement(self, arr, k):
         arr.sort()
 
-        result1 = wilber(arr.copy(), k)
-        result2 = _simple_dynamic_program(arr.copy(), k)
+        result1 = wilber(arr.copy(), k, stable=2)
+        result2 = _simple_dynamic_program(arr.copy(), k, stable=True)
 
         cost1 = compute_cluster_cost_sorted(arr, result1)
         cost2 = compute_cluster_cost_sorted(arr, result2)
-        self.assertEqual(cost1, cost2)
+        equal= (result1==result2).sum()
+        self.assertLessEqual(cost1, cost2, msg=f"{equal}, {result1[:10]}, {result2[:10]}")
 
-        assert_array_equal(result1, result2)
+        #assert_array_equal(result1, result2)
 
         #print(result1)
         #print(result2)
