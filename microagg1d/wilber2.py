@@ -144,10 +144,13 @@ def __staggered2(n, wil_calculator, k):
         return F
 
     def one_round(l, r, u, b):
+        f_min = np.min(F_vals[u:b])
+        for j in range(u, b):
+            F_vals[j]-=f_min
+
         __smawk_iter(l, r, u, b, wil_calculator, F, col_starts, col_buffer)
         for j in range(l, r):
-            val = wil_calculator.calc(j, F[j])
-            F_vals[j+1]=val
+            F_vals[j+1] = wil_calculator.calc(j, F[j])
 
     # first block
     max_col = min(3*k-1,n)
@@ -162,7 +165,7 @@ def __staggered2(n, wil_calculator, k):
         one_round(i*k-1, (i+1)*k-1, max(F[i*k-2], (i-2)*k), i*k)
         j=i+1
 
-    if R>0: # deal with the remainder
+    if R > 0: # deal with the remainder
         one_round(j*k-1, (j)*k-1+R, max(F[j*k-2], (j-2)*k), (j-1)*k+R)
 
     return F
