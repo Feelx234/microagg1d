@@ -15,11 +15,9 @@ def calc_cumsum(v):
 @njit([(float64, float64, int64)], cache=USE_CACHE)
 def _calc_objective(val1, val2, n):
     """Compute the cluster cost of clustering points including i excluding j"""
-    mu = val1/n
     result = val2
-    result += n * (mu * mu)
-    result -= (2 * mu) * (val1)
-    return max(result, 0)
+    result -= val1/n*val1
+    return max(result, 0) # max to avoid some numerical issues
 
 
 @njit([(float64[:], float64[:], int64, int64)], cache=USE_CACHE)
