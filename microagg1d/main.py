@@ -3,15 +3,31 @@ from numba import njit, float64, int64
 from numba.experimental import jitclass
 from microagg1d.wilber import wilber, _galil_park
 from microagg1d.common import calc_cumsum, calc_objective_upper_inclusive, calc_objective_cell, calc_cumsum_cell
-
+from microagg1d.sse import sse_stable
 
 USE_CACHE=True
 
 
+@jitclass([('v', float64[:]),])
+class NoPrecomputeCalculator:
+    def __init__(self, v):
+        self.v = v
+
+    def calc(self, i, j):
+        return sse_stable(self.v[i:j+1])
+        #mean = np.mean(self.v[i:j+1])
+        #return np.sum(np.square(self.v[i:j+1]-mean))
 
 
+@jitclass([('cumsum', float64[:]), ('cumsum2', float64[:])])
+class SimpleCalculator:
+    def __init__(self, v):
+        self.cumsum = calc_cumsum(v)
 
-
+    def calc(self, i, j):
+        n=j+1-i
+        delta = self.cumsum[j+1]-self.cumsum[i]
+        return -delta*delta/n
 
 @jitclass([('cumsum', float64[:]), ('cumsum2', float64[:])])
 class CumsumCalculator:
@@ -90,6 +106,18 @@ def _simple_dynamic_program(x, k, stable=1):
     if k==1: # each node has its own cluster
         return np.arange(n)
 
+    n = len(x)
+    assert k > 0
+    if n//2 < k: # there can only be one cluster
+        return np.zeros(n, dtype=np.int64)
+    if k==1: # each node has its own cluster
+        return np.arange(n)
+    if stable==3:
+        calculator = NoPrecomputeCalculator(x)
+        return __simple_dynamic_program(n, k, calculator)
+    if stable==2:
+        calculator = SimpleCalculator(x)
+        return __simple_dynamic_program(n, k, calculator)
     if stable==1:
         calculator = StableCumsumCalculator(x, k)
         return __simple_dynamic_program(n, k, calculator)
@@ -137,7 +165,9 @@ def _simple_dynamic_program2(x, k, stable=1):
         return np.zeros(n, dtype=np.int64)
     if k==1: # each node has its own cluster
         return np.arange(n)
-
+    if stable==2:
+        calculator = SimpleCalculator(x)
+        return __simple_dynamic_program2(n, k, calculator)
     if stable==1:
         calculator = StableCumsumCalculator(x, k)
         return __simple_dynamic_program2(n, k, calculator)
