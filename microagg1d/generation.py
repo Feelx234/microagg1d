@@ -23,7 +23,7 @@ def _create_sol(n,k,d):
     return solution
 
 def solution_for_arange(n, k):
-    if k>= n//2:
+    if k> n//2:
         return np.zeros(n, dtype=np.int32)
     arange_len, remainder = divmod(n,k)
     arr = np.arange(n, dtype=np.float64)

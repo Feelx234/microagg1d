@@ -10,9 +10,9 @@ from microagg1d.wilber2 import _galil_park2, _staggered2
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
         result = algorithm(self.arr, k)
-        C_sol = compute_cluster_cost_sorted(self.arr, np.array(solution,dtype=np.int64))
-        C_res = compute_cluster_cost_sorted(self.arr, result)
-        np.testing.assert_array_equal(result, solution, f"k={k} C_sol={C_sol} c_res={C_res}")
+        c_sol = compute_cluster_cost_sorted(self.arr, np.array(solution,dtype=np.int64))
+        c_res = compute_cluster_cost_sorted(self.arr, result)
+        np.testing.assert_array_equal(result, solution, f"k={k} C_sol={c_sol} c_res={c_res}")
 
 class Test8Elements(unittest.TestCase):
     def __init__(self, *args, **kwargs) -> None:
@@ -53,6 +53,12 @@ class Test8Elements(unittest.TestCase):
     def test__simple_dynamic_program_stable_1(self):
         my_test_algorithm(self, partial(_simple_dynamic_program, stable=1))
 
+    def test__simple_dynamic_program_stable_2(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program, stable=2))
+
+    def test__simple_dynamic_program_stable_3(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program, stable=3))
+
 
 
 # simple dynamic program2
@@ -64,6 +70,10 @@ class Test8Elements(unittest.TestCase):
 
     def test__simple_dynamic_program2_stable_1(self):
         my_test_algorithm(self, partial(_simple_dynamic_program2, stable=1))
+
+
+    def test__simple_dynamic_program2_stable_2(self):
+        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=2))
 
 
 
