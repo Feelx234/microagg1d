@@ -3,15 +3,19 @@ import unittest
 from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
-from microagg1d.wilber import conventional_algorithm, wilber, _wilber, wilber_edu, _galil_park
-from microagg1d.main import optimal_univariate_microaggregation_1d, _simple_dynamic_program,  _simple_dynamic_program2, compute_cluster_cost_sorted
-from microagg1d.wilber2 import _galil_park2, _staggered2
+from microagg1d.wilber import wilber, _wilber, _galil_park
+from microagg1d.main import optimal_univariate_microaggregation_1d
+from microagg1d.user_facing import _sse_galil_park2, _sse_staggered2, _sse_simple_dynamic_program2, _sse_simple_dynamic_program
+from microagg1d.educational_algorithms import wilber_edu, conventional_algorithm
+from microagg1d.common import compute_cluster_cost_sorted
+from microagg1d.sse_cost import SSECostCalculator
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
         result = algorithm(self.arr, k)
-        c_sol = compute_cluster_cost_sorted(self.arr, np.array(solution,dtype=np.int64))
-        c_res = compute_cluster_cost_sorted(self.arr, result)
+        calculator = SSECostCalculator(self.arr)
+        c_sol = compute_cluster_cost_sorted(np.array(solution,dtype=np.int64), calculator)
+        c_res = compute_cluster_cost_sorted(result, calculator)
         np.testing.assert_array_equal(result, solution, f"k={k} C_sol={c_sol} c_res={c_res}")
 
 class Test8Elements(unittest.TestCase):
@@ -44,36 +48,36 @@ class Test8Elements(unittest.TestCase):
         my_test_algorithm(self, partial(_wilber, stable=1))
 
 # simply dynamic program
-    def test__simple_dynamic_program(self):
-        my_test_algorithm(self, _simple_dynamic_program)
+    def test__sse_simple_dynamic_program(self):
+        my_test_algorithm(self, _sse_simple_dynamic_program)
 
-    def test__simple_dynamic_program_stable_0(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program, stable=0))
+    def test__sse_simple_dynamic_program_stable_0(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program, stable=0))
 
-    def test__simple_dynamic_program_stable_1(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program, stable=1))
+    def test__sse_simple_dynamic_program_stable_1(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program, stable=1))
 
-    def test__simple_dynamic_program_stable_2(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program, stable=2))
+    def test__sse_simple_dynamic_program_stable_2(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program, stable=2))
 
-    def test__simple_dynamic_program_stable_3(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program, stable=3))
+    def test__sse_simple_dynamic_program_stable_3(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program, stable=3))
 
 
 
 # simple dynamic program2
-    def test__simple_dynamic_program2(self):
-        my_test_algorithm(self, _simple_dynamic_program2)
+    def test__sse_simple_dynamic_program2(self):
+        my_test_algorithm(self, _sse_simple_dynamic_program2)
 
-    def test__simple_dynamic_program2_stable_0(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=0))
+    def test__sse_simple_dynamic_program2_stable_0(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=0))
 
-    def test__simple_dynamic_program2_stable_1(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=1))
+    def test__sse_simple_dynamic_program2_stable_1(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=1))
 
 
-    def test__simple_dynamic_program2_stable_2(self):
-        my_test_algorithm(self, partial(_simple_dynamic_program2, stable=2))
+    def test__sse_simple_dynamic_program2_stable_2(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=2))
 
 
 
@@ -81,11 +85,11 @@ class Test8Elements(unittest.TestCase):
 #    def test__staggered2(self):
 #        my_test_algorithm(self, _staggered2)
 
-    def test__staggered2_stable_0(self):
-        my_test_algorithm(self, partial(_staggered2, stable=0))
+    def test__sse_staggered2_stable_0(self):
+        my_test_algorithm(self, partial(_sse_staggered2, stable=0))
 
-    def test__staggered2_stable_1(self):
-        my_test_algorithm(self, partial(_staggered2, stable=1))
+    def test__sse_staggered2_stable_1(self):
+        my_test_algorithm(self, partial(_sse_staggered2, stable=1))
 
 
 
@@ -105,11 +109,11 @@ class Test8Elements(unittest.TestCase):
         my_test_algorithm(self, partial(_galil_park, stable=0))
 
 # galil park 2
-    def test_galil_park2_stable_1(self):
-        my_test_algorithm(self, partial(_galil_park2, stable=1))
+    def test_sse_galil_park2_stable_1(self):
+        my_test_algorithm(self, partial(_sse_galil_park2, stable=1))
 
-    def test_galil_park2_stable_0(self):
-        my_test_algorithm(self, partial(_galil_park2, stable=0))
+    def test_sse_galil_park2_stable_0(self):
+        my_test_algorithm(self, partial(_sse_galil_park2, stable=0))
 
 
 
@@ -189,7 +193,7 @@ class TestRange7(Test8Elements):
 
 
 class TestAgreement(unittest.TestCase):
-    """Tests to ensure that _simple_dynamic_program and wilber produce the same cluster costs
+    """Tests to ensure that _sse_simple_dynamic_program and wilber produce the same cluster costs
     but clusterings were not the same!
     """
 
@@ -197,10 +201,11 @@ class TestAgreement(unittest.TestCase):
         arr.sort()
 
         result1 = wilber(arr.copy(), k, stable=2)
-        result2 = _simple_dynamic_program(arr.copy(), k, stable=True)
+        result2 = _sse_simple_dynamic_program(arr.copy(), k, stable=True)
 
-        cost1 = compute_cluster_cost_sorted(arr, result1)
-        cost2 = compute_cluster_cost_sorted(arr, result2)
+        calculator = SSECostCalculator(arr)
+        cost1 = compute_cluster_cost_sorted(result1, calculator)
+        cost2 = compute_cluster_cost_sorted(result2, calculator)
         equal= (result1==result2).sum()
         self.assertLessEqual(cost1, cost2, msg=f"{equal}, {result1[:10]}, {result2[:10]}")
 
@@ -219,13 +224,13 @@ class TestAgreement(unittest.TestCase):
         self.assert_agreement(arr, k=2)
 
     def test_3(self):
-        result = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
+        result = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
         expected_result = np.repeat(np.arange(250_000), 2)
         assert_array_equal(result, expected_result)
 
         with self.assertRaises(AssertionError): # weird test, but it makes sure that the stable version is still needed ...
             # if this issue is resolved for the default algorithm, the stable version might be cut
-            result2 = _simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
+            result2 = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
             assert_array_equal(result2, expected_result)
 
         result3 = _wilber(np.arange(500_000, dtype=np.float64), 2, stable=True)

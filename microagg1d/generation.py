@@ -1,6 +1,6 @@
 import numpy as np
 from numba import njit
-from microagg1d.sse import compute_sse_sorted_stable
+from microagg1d.sse_cost import compute_sse_sorted_stable
 
 
 def _create_sol(n,k,d):

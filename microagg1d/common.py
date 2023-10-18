@@ -20,88 +20,73 @@ def _calc_objective(val1, val2, n):
     return max(result, 0) # max to avoid some numerical issues
 
 
-@njit([(float64[:], float64[:], int64, int64)], cache=USE_CACHE)
-def calc_objective_upper_exclusive(cumsum, cumsum2, i, j):
-    """Compute the cluster cost of clustering points including i excluding j"""
-    if j <= i:
-        return 0.0
-    return _calc_objective(cumsum[j]-cumsum[i], cumsum2[j] - cumsum2[i], j-i)
-#    mu = (cumsum[j]-cumsum[i])/(j-i)
-#    result = cumsum2[j] - cumsum2[i]
-#    result += (j - i) * (mu * mu)
-#    result -= (2 * mu) * (cumsum[j] - cumsum[i])
-#    return max(result, 0)
 
-
-@njit([(float64[:], float64[:], int64, int64)], cache=USE_CACHE)
-def calc_objective_upper_inclusive(cumsum, cumsum2, i, j):
-    """Compute the cluster cost of clustering points including both i and j"""
-    if j <= i:
-        return 0.0
-    return _calc_objective(cumsum[j+1]-cumsum[i], cumsum2[j+1] - cumsum2[i], j+1-i)
-    #mu = (cumsum[j + 1]-cumsum[i])/(j + 1-i)
-    #result = cumsum2[j + 1] - cumsum2[i]
-    #result += (j - i + 1) * (mu * mu)
-    #result -= (2 * mu) * (cumsum[j + 1] - cumsum[i])
-    #return max(result, 0)
-
-
-@njit([(float64[:],int64)], cache=True)
-def calc_cumsum_cell(v, cell_size):
-    """Computes cumsums in cells of size cell_size
-    instead of cumsum([1,2,3,4]) = [0,1,3,6,10]
-    cumsum_cell([1,2,3,4], 2) = [[0,1,3], [0, 3, 7]]
-    This has a numeric advantage as the numbers stored grow slower
+@njit(cache=USE_CACHE)
+def calc_num_clusters_plus_one(result):
+    """Compute the number of clusters encoded in results
+    Can be used on e.g. the result of _conventional_algorithm, Wilber
     """
-    quotient, remainder = divmod(len(v), cell_size)
-    num_cells = quotient
-    if remainder!=0:
-        num_cells+=1
-    out = np.zeros((num_cells, cell_size+1), dtype=np.float64)
+    num_clusters = 0
+    curr_pos = len(result)-1
+    while result[curr_pos]>0:
+        curr_pos = result[curr_pos]-1
+        num_clusters+=1
+    return num_clusters+1
 
-    for i in range(quotient):
-        curr_out = out[i,:]
-        curr_out[0] = 0.0
-        offset = i*cell_size
-        for j in range(cell_size):
-            x = v[offset+j]
-            curr_out[j+1] = curr_out[j] + x
-    if remainder != 0:
-        i=quotient
-        curr_out = out[i,:]
-        curr_out[0] = 0.0
-        offset = i*cell_size
-        for j in range(remainder):
-            x = v[offset+j]
-            curr_out[j+1] = curr_out[j] + x
+
+
+@njit(cache=USE_CACHE)
+def convert_implicit_to_explicit_clustering(result):
+    """Converts an implicit cluster assignment into an explicit assignment
+    Example: the implicit assignment [0, 0, 1, 1, 2, 2]
+    eactually indicates the clustering [0, 1, 2, 2, 2, 2] that is the first
+      two points are their own cluster while the remaining four points are one cluster
+    """
+    num_clusters = calc_num_clusters_plus_one(result)-1
+    out = np.empty_like(result)
+    curr_pos = len(result)-1
+    while result[curr_pos]>0:
+        # assign output the cluster values
+        # we need curr_pos +1 as the square bracket operator is upper exclusive
+        out[result[curr_pos]:curr_pos+1] = num_clusters
+        # adjust loop variables
+        curr_pos = result[curr_pos]-1
+        num_clusters-=1
+    out[0:curr_pos+1] = num_clusters
     return out
 
 
-@njit([(float64, float64, float64, float64, int64, int64, int64)], cache=USE_CACHE)
-def calc_objective_upper_inclusive_2(i_cumsum, i_cumsum2, j_cumsum, j_cumsum2,  i, j, cell_size):
-    """Compute the cluster cost of clustering points including both i and j across two cells"""
-    val1 = j_cumsum + i_cumsum
-    #print("\t", val1)
-    mu = (val1)/(j + 1 + cell_size - i)
-    result = j_cumsum2 + i_cumsum2
-    #print("\t", result)
-    result -= (2 * mu) * val1
-    result += (j - i + 1+ cell_size) * (mu * mu)
-    #print("\t", result)
-    return max(result, 0.0)
 
-@njit([(float64[:,:], float64[:,:], int64, int64, int64)], cache=USE_CACHE)
-def calc_objective_cell(cumsum, cumsum2, cell_size, i, j):
-    #assert j>=i
-    #assert j - i < 2 * cell_size
+def trivial_cases(n, k, dtype=np.int32):
+    """Solves the trivial cases of univariate microaggregation
+    The two trivial cases are
+      1) only one cluster is possible (2k > n)
+      2) there is only one way to soslve the problem with two clusters (2k == n)
+    """
+    assert k > 0
+    assert k <= n
+    if 2*k > n:
+        return True, np.zeros(n, dtype=dtype)
+    if 2*k == n:
+        out = np.empty(n, dtype=dtype)
+        out[:k]=0
+        out[k:]=1
+        return True, out
+    return False, np.empty(0, dtype=dtype)
 
-    cell_i, remainder_i = divmod(i, cell_size)
-    cell_j, remainder_j = divmod(j, cell_size)
-    if cell_i  == cell_j: # both are in one cell
-        return calc_objective_upper_inclusive(cumsum[cell_i,:], cumsum2[cell_i,:], remainder_i, remainder_j)
-    else:
-        return calc_objective_upper_inclusive_2(cumsum [cell_i, cell_size] - cumsum [cell_i, remainder_i],
-                                                cumsum2[cell_i, cell_size] - cumsum2[cell_i, remainder_i],
-                                                cumsum [cell_j, remainder_j + 1],
-                                                cumsum2[cell_j, remainder_j + 1],
-                                                remainder_i, remainder_j, cell_size)
+
+
+@njit
+def compute_cluster_cost_sorted(clusters_sorted, calculator):
+    """Given an explicit cluster assignment compute the cluster cost"""
+    s = 0.0
+    i = 0
+    j = 1
+    n = len(clusters_sorted)
+    while j < n:
+        while clusters_sorted[j]==clusters_sorted[i] and  j < n:
+            j+=1
+        s+=calculator.calc(i, j-1)
+        i=j
+        j=i+1
+    return s
