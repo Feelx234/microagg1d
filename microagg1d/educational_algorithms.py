@@ -4,7 +4,7 @@ from numba.experimental import jitclass
 
 from microagg1d.sse_cost import calc_objective_upper_inclusive, RestrictedCalculator
 from microagg1d.common import convert_implicit_to_explicit_clustering, calc_cumsum
-from microagg1d.wilber import __wilber
+from microagg1d.old_algorithms import __wilber
 
 USE_CACHE=True
 

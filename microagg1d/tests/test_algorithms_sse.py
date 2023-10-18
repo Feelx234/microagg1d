@@ -3,7 +3,7 @@ import unittest
 from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
-from microagg1d.wilber import wilber, _wilber, _galil_park
+from microagg1d.old_algorithms import wilber, _wilber, _galil_park
 from microagg1d.main import optimal_univariate_microaggregation_1d
 from microagg1d.user_facing import _sse_galil_park2, _sse_staggered2, _sse_simple_dynamic_program2, _sse_simple_dynamic_program
 from microagg1d.educational_algorithms import wilber_edu, conventional_algorithm
