@@ -1,5 +1,6 @@
 import numpy as np
 from microagg1d.user_facing import _sse_wilber2, _sse_galil_park2, _sse_simple_dynamic_program2, _sae_user, _sse_staggered2
+from microagg1d.user_facing import _rounddown_user, _roundup_user
 from microagg1d.common import trivial_cases
 
 USE_CACHE=True
@@ -46,5 +47,9 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1, cost="
         else:
             raise NotImplementedError("Should not be reachable")
     elif cost=="sae":
+        clusters = _sae_user(x, k, method)
+    elif cost=="roundup":
+        clusters = _sae_user(x, k, method)
+    elif cost=="rounddown":
         clusters = _sae_user(x, k, method)
     return undo_argsort(clusters, order)
