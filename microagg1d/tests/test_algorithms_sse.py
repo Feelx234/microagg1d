@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from microagg1d.main import optimal_univariate_microaggregation_1d
 from microagg1d.user_facing import _sse_galil_park2, _sse_staggered2, _sse_simple_dynamic_program2, _sse_simple_dynamic_program
-from microagg1d.educational_algorithms import wilber_edu, conventional_algorithm
+from microagg1d.algorithms_educational import wilber_edu, conventional_algorithm
 from microagg1d.common import compute_cluster_cost_sorted
 from microagg1d.cost_sse import SSECostCalculator
 

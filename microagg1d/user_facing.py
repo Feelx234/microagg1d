@@ -5,8 +5,8 @@ from microagg1d.common import calc_cumsum, convert_implicit_to_explicit_clusteri
 from microagg1d.cost_sse import AdaptedSSECostCalculator, StableAdaptedSSECostCalculator, FasterAdaptedSSECostCalculator
 from microagg1d.cost_sse import NoPrecomputeSSECostCalculator, SSECostCalculator, FasterSSECostCalculator, StableSSECostCalculator
 from microagg1d.cost_sae import AdaptedSAECostCalculator, SAECostCalculator
-from microagg1d.linear_algorithms import __staggered2, __galil_park2, __wilber2
-from microagg1d.other_algorithms import __simple_dynamic_program, __simple_dynamic_program2
+from microagg1d.algorithms_linear import __staggered2, __galil_park2, __wilber2
+from microagg1d.algorithms_other import __simple_dynamic_program, __simple_dynamic_program2
 USE_CACHE = True
 
 
