@@ -86,7 +86,7 @@ def compute_cluster_cost_sorted(clusters_sorted, calculator):
     while j < n:
         while clusters_sorted[j]==clusters_sorted[i] and  j < n:
             j+=1
-        s+=calculator.calc(i, j-1)
+        s+=calculator.calc(i, j)
         i=j
         j=i+1
     return s

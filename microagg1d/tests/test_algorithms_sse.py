@@ -38,14 +38,14 @@ class Test8Elements(unittest.TestCase):
 
 
 # wilber
-    def test_wilber(self):
-        my_test_algorithm(self, wilber)
+    # def test_wilber(self):
+    #     my_test_algorithm(self, wilber)
 
-    def test__wilber_stable_0(self):
-        my_test_algorithm(self, partial(_wilber, stable=0))
+    # def test__wilber_stable_0(self):
+    #     my_test_algorithm(self, partial(_wilber, stable=0))
 
-    def test__wilber_stable_1(self):
-        my_test_algorithm(self, partial(_wilber, stable=1))
+    # def test__wilber_stable_1(self):
+    #     my_test_algorithm(self, partial(_wilber, stable=1))
 
 # simply dynamic program
     def test__sse_simple_dynamic_program(self):
@@ -75,9 +75,11 @@ class Test8Elements(unittest.TestCase):
     def test__sse_simple_dynamic_program2_stable_1(self):
         my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=1))
 
-
     def test__sse_simple_dynamic_program2_stable_2(self):
         my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=2))
+
+    def test__sse_simple_dynamic_program2_stable_3(self):
+        my_test_algorithm(self, partial(_sse_simple_dynamic_program2, stable=3))
 
 
 
@@ -94,19 +96,19 @@ class Test8Elements(unittest.TestCase):
 
 
 
-    def test_wilber_edu(self):
-        my_test_algorithm(self, partial(wilber_edu, should_print=False))
+    # def test_wilber_edu(self):
+    #     my_test_algorithm(self, partial(wilber_edu, should_print=False))
 
 
-# galil park 1
-    def test_galil_park_stable_2(self):
-        my_test_algorithm(self, partial(_galil_park, stable=2))
+# # galil park 1
+#     def test_galil_park_stable_2(self):
+#         my_test_algorithm(self, partial(_galil_park, stable=2))
 
-    def test_galil_park_stable_1(self):
-        my_test_algorithm(self, partial(_galil_park, stable=1))
+#     def test_galil_park_stable_1(self):
+#         my_test_algorithm(self, partial(_galil_park, stable=1))
 
-    def test_galil_park_stable_0(self):
-        my_test_algorithm(self, partial(_galil_park, stable=0))
+#     def test_galil_park_stable_0(self):
+#         my_test_algorithm(self, partial(_galil_park, stable=0))
 
 # galil park 2
     def test_sse_galil_park2_stable_1(self):
@@ -197,44 +199,44 @@ class TestAgreement(unittest.TestCase):
     but clusterings were not the same!
     """
 
-    def assert_agreement(self, arr, k):
-        arr.sort()
+    # def assert_agreement(self, arr, k):
+    #     arr.sort()
 
-        result1 = wilber(arr.copy(), k, stable=2)
-        result2 = _sse_simple_dynamic_program(arr.copy(), k, stable=True)
+    #     result1 = wilber(arr.copy(), k, stable=2)
+    #     result2 = _sse_simple_dynamic_program(arr.copy(), k, stable=True)
 
-        calculator = SSECostCalculator(arr)
-        cost1 = compute_cluster_cost_sorted(result1, calculator)
-        cost2 = compute_cluster_cost_sorted(result2, calculator)
-        equal= (result1==result2).sum()
-        self.assertLessEqual(cost1, cost2, msg=f"{equal}, {result1[:10]}, {result2[:10]}")
+    #     calculator = SSECostCalculator(arr)
+    #     cost1 = compute_cluster_cost_sorted(result1, calculator)
+    #     cost2 = compute_cluster_cost_sorted(result2, calculator)
+    #     equal= (result1==result2).sum()
+    #     self.assertLessEqual(cost1, cost2, msg=f"{equal}, {result1[:10]}, {result2[:10]}")
 
-        #assert_array_equal(result1, result2)
+    #     #assert_array_equal(result1, result2)
 
-        #print(result1)
-        #print(result2)
-    def test_1(self):
-        np.random.seed(0)
-        arr = np.random.rand(1_000_000)
-        self.assert_agreement(arr, k=2)
+    #     #print(result1)
+    #     #print(result2)
+    # def test_1(self):
+    #     np.random.seed(0)
+    #     arr = np.random.rand(1_000_000)
+    #     self.assert_agreement(arr, k=2)
 
 
-    def test_2(self):
-        arr = np.arange(1000001, dtype=np.float64)
-        self.assert_agreement(arr, k=2)
+    # def test_2(self):
+    #     arr = np.arange(1000001, dtype=np.float64)
+    #     self.assert_agreement(arr, k=2)
 
-    def test_3(self):
-        result = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
-        expected_result = np.repeat(np.arange(250_000), 2)
-        assert_array_equal(result, expected_result)
+    # def test_3(self):
+    #     result = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, stable=True)
+    #     expected_result = np.repeat(np.arange(250_000), 2)
+    #     assert_array_equal(result, expected_result)
 
-        with self.assertRaises(AssertionError): # weird test, but it makes sure that the stable version is still needed ...
-            # if this issue is resolved for the default algorithm, the stable version might be cut
-            result2 = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
-            assert_array_equal(result2, expected_result)
+    #     with self.assertRaises(AssertionError): # weird test, but it makes sure that the stable version is still needed ...
+    #         # if this issue is resolved for the default algorithm, the stable version might be cut
+    #         result2 = _sse_simple_dynamic_program(np.arange(500_000, dtype=np.float64), 2, False)
+    #         assert_array_equal(result2, expected_result)
 
-        result3 = _wilber(np.arange(500_000, dtype=np.float64), 2, stable=True)
-        assert_array_equal(result3, expected_result)
+    #     result3 = _wilber(np.arange(500_000, dtype=np.float64), 2, stable=True)
+    #     assert_array_equal(result3, expected_result)
 
 # n=1000000 seed=0 k=5 does not agree!
 

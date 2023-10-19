@@ -28,12 +28,12 @@ def __wilber2(n, wil_calculator):
         __smawk_iter(c, p, r, c+1, wil_calculator, F, col_starts, col_buffer)
         #print("F", F)
         for j in range(c, p):
-            F_vals[j+1] = wil_calculator.calc(j, F[j])
+            F_vals[j+1] = wil_calculator.calc(F[j], j+1)
 
         #print("H", c+1, p, c+1,p)
         __smawk_iter(c+1, p, c+1, p, wil_calculator, H, col_starts, col_buffer)
         for j in range(c+1, p):
-            H_vals[j+1] = wil_calculator.calc(j, H[j])
+            H_vals[j+1] = wil_calculator.calc(H[j], j+1)
 
         j0=p+1
         for j in range(c+2, p+1):
@@ -75,7 +75,7 @@ def __galil_park2(n, wil_calculator):
         p = min(2*c-r+1, n)
         __smawk_iter(c, p, r, c+1, wil_calculator, F, col_starts, col_buffer)
         for j in range(c, p):
-            val = wil_calculator.calc(j, F[j])
+            val = wil_calculator.calc(F[j], j+1)
             if val < N_vals[j+1]:
                 F_vals[j+1] = val
             else:
@@ -83,16 +83,16 @@ def __galil_park2(n, wil_calculator):
                 F[j] = N[j]
         j0=p+2
         for j in range(c+2, p+1):
-            if wil_calculator.calc(j-1, j-1) < F_vals[j]:
+            if wil_calculator.calc(j-1, j) < F_vals[j]:
                 # the H value considered was smaller, may not continue
                 F[j-1] = j-1
                 j0 = j
-                F_vals[j0] = wil_calculator.calc(j-1, j-1)
+                F_vals[j0] = wil_calculator.calc(j-1, j)
                 r = c
                 c = j0
                 break
 
-            if F_vals[p] <= wil_calculator.calc(p-1, j-1):
+            if F_vals[p] <= wil_calculator.calc(j-1, p):
                 # we did just eliminate row j entries c:p
                 # => may continue as usual
                 pass
@@ -133,7 +133,7 @@ def __staggered2(n, wil_calculator, k):
     # initial values
     for i in range(k-1, min(2*k-1,n)):
         F[i] = 0
-        F_vals[i+1] = wil_calculator.calc(i, 0)
+        F_vals[i+1] = wil_calculator.calc(0, i+1)
     if n<=2*k-1:
         return F
 
@@ -144,7 +144,7 @@ def __staggered2(n, wil_calculator, k):
 
         __smawk_iter(l, r, u, b, wil_calculator, F, col_starts, col_buffer)
         for j in range(l, r):
-            F_vals[j+1] = wil_calculator.calc(j, F[j])
+            F_vals[j+1] = wil_calculator.calc(F[j], j+1)
 
     # first block
     max_col = min(3*k-1,n)

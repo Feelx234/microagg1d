@@ -117,6 +117,9 @@ def _sse_simple_dynamic_program2(x, k, stable=1):
         return np.zeros(n, dtype=np.int64)
     if k==1: # each node has its own cluster
         return np.arange(n)
+    if stable==3:
+        calculator = NoPrecomputeSSECostCalculator(x)
+        return __simple_dynamic_program2(n, k, calculator)
     if stable==2:
         calculator = SSECostCalculator(x)
         return __simple_dynamic_program2(n, k, calculator)

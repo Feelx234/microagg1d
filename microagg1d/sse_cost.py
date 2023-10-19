@@ -112,19 +112,19 @@ class AdaptedSSECostCalculator:
         self.k = k
         self.F_vals = F_vals # F_vals[i] is min_l w_li
         n = len(cumsum) - 1
-        self.SMALL_VAL = calc_objective_upper_inclusive(cumsum, cumsum2, 0, n-1)
+        self.SMALL_VAL = calc_objective_upper_exclusive(cumsum, cumsum2, 0, n)
         self.LARGE_VAL = self.SMALL_VAL * (1 + n)
 
-    def calc(self, j, i): # i <-> j interchanged is not a bug!
+    def calc(self, i, j):
         """This function computes the w_{ij} values introduced"""
-        if j < i:
+        if j <= i:
             return np.inf
 
-        if not (j+1 - i >= self.k):
+        if not (j - i >= self.k):
             return self.LARGE_VAL + self.SMALL_VAL*i
-        if not (j+1 - i <= 2 * self.k - 1):
+        if not (j - i <= 2 * self.k - 1):
             return self.LARGE_VAL - self.SMALL_VAL*i
-        return calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j) + self.F_vals[i]
+        return calc_objective_upper_exclusive(self.cumsum, self.cumsum2, i, j) + self.F_vals[i]
 
 
 
@@ -142,16 +142,16 @@ class StableAdaptedSSECostCalculator:
         self.LARGE_VAL = self.SMALL_VAL * (1 + n)
         self.cell_size = cell_size
 
-    def calc(self, j, i): # i <-> j interchanged is not a bug!
-        if j < i:
+    def calc(self, i, j):
+        if j <= i:
             return np.inf
 
-        if not (j+1 - i >= self.k):
+        if not (j - i >= self.k):
             return self.LARGE_VAL + self.SMALL_VAL*i
-        if not (j+1 - i <= 2 * self.k - 1):
+        if not (j - i <= 2 * self.k - 1):
             return self.LARGE_VAL - self.SMALL_VAL*i
 
-        return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j) + self.F_vals[i]
+        return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j-1) + self.F_vals[i]
 
 
 
@@ -169,18 +169,28 @@ class FasterAdaptedSSECostCalculator:
         self.SMALL_VAL =  (n + 1) * x_bar * x_bar
         self.LARGE_VAL = self.SMALL_VAL * (1 + n)
 
-    def calc(self, j, i): # i <-> j interchanged is not a bug!
-        if j < i:
+    def calc(self, i, j):
+        if j <= i:
             return np.inf
 
-        if not (j+1 - i >= self.k):
+        if not (j - i >= self.k):
             return self.LARGE_VAL + self.SMALL_VAL*i
-        if not (j+1 - i <= 2 * self.k - 1):
+        if not (j - i <= 2 * self.k - 1):
             return self.LARGE_VAL - self.SMALL_VAL*i
-        n=(1+j-i)
-        x_bar = (self.cumsum[j+1] - self.cumsum[i])/n
+        n=(j-i)
+        x_bar = (self.cumsum[j] - self.cumsum[i])/n
         return - n * x_bar * x_bar   + self.F_vals[i]
 
+
+@jitclass([('cumsum', float64[:])])
+class FasterSSECostCalculator:
+    def __init__(self, v):
+        self.cumsum = calc_cumsum(v)
+
+    def calc(self, i, j):
+        n=j-i
+        delta = self.cumsum[j]-self.cumsum[i]
+        return -delta*delta/n
 
 @jitclass([('cumsum', float64[:]), ('cumsum2', float64[:]), ('k', int64)])
 class RestrictedCalculator:
@@ -243,20 +253,12 @@ class NoPrecomputeSSECostCalculator:
         self.v = v
 
     def calc(self, i, j):
-        return sse_stable(self.v[i:j+1])
+        return sse_stable(self.v[i:j])
         #mean = np.mean(self.v[i:j+1])
         #return np.sum(np.square(self.v[i:j+1]-mean))
 
 
-@jitclass([('cumsum', float64[:]), ('cumsum2', float64[:])])
-class FasterSSECostCalculator:
-    def __init__(self, v):
-        self.cumsum = calc_cumsum(v)
 
-    def calc(self, i, j):
-        n=j+1-i
-        delta = self.cumsum[j+1]-self.cumsum[i]
-        return -delta*delta/n
 
 @jitclass([('cumsum', float64[:]), ('cumsum2', float64[:])])
 class SSECostCalculator:
@@ -265,7 +267,9 @@ class SSECostCalculator:
         self.cumsum2 = calc_cumsum(np.square(v))
 
     def calc(self, i, j):
-        return calc_objective_upper_inclusive(self.cumsum, self.cumsum2, i, j)
+        if i >= j:
+            return np.inf
+        return calc_objective_upper_exclusive(self.cumsum, self.cumsum2, i, j)
 
 
 @jitclass([('cumsum', float64[:,:]), ('cumsum2', float64[:,:]), ('cell_size', int64)])
@@ -278,4 +282,4 @@ class StableSSECostCalculator:
     def calc(self, i, j):
         if j==i:
             return 0
-        return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j)
+        return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j-1)

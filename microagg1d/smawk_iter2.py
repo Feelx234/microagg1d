@@ -4,17 +4,17 @@ from numba import njit
 
 @njit
 def calc_len(start, stop, step_size):
-    return (stop-start-1)//step_size + 1
+    return (stop-start)//step_size + 1
 
 @njit()
 def interpolate(row_start, row_step, row_len, cols, calculator, result):
     curr_col=0
     for i in range(2, row_len, 2):
-        prev_row = row_start + row_step*(i-1)
+        prev_row = row_start-1 + row_step*(i-1)
         start_col = result[prev_row]
         if i+1 < row_len:
             # choose the next rows column as stop column
-            next_row = row_start + row_step*(i+1)
+            next_row = row_start-1 + row_step*(i+1)
             stop_col = result[next_row]
         else:
             # the last column is the stop column
@@ -23,15 +23,15 @@ def interpolate(row_start, row_step, row_len, cols, calculator, result):
             curr_col+=1
         best = curr_col
         curr_row = row_start + row_step*i
-        best_val = calculator.calc(curr_row, cols[best])
+        best_val = calculator.calc(cols[best], curr_row)
         while cols[curr_col] < stop_col:
-            tmp = calculator.calc(curr_row, cols[curr_col+1])
+            tmp = calculator.calc(cols[curr_col+1], curr_row)
             if best_val > tmp:
                 best = curr_col+1
                 best_val = tmp
 
             curr_col+=1
-        result[curr_row]=cols[best]
+        result[curr_row-1]=cols[best]
 
 @njit()
 def reduce_iter(row_start, row_step, row_len, cols, calculator, col_buffer):
@@ -43,7 +43,7 @@ def reduce_iter(row_start, row_step, row_len, cols, calculator, col_buffer):
     for curr_col in cols:
         if curr_col != S[r]:
             while r >= 0:
-                if calculator.calc(row_start + row_step * r, S[r]) > calculator.calc(row_start + row_step * r, curr_col):
+                if calculator.calc(S[r], row_start + row_step * r) > calculator.calc(curr_col, row_start + row_step * r):
                     r-=1
                 else:
                     break
@@ -77,7 +77,7 @@ def _smawk_iter(row_start, row_stop, col_start, col_stop, calculator, result):
     #print("rows", row_start, row_stop)
     if row_start-row_stop == 0 or col_stop-col_start==0:
         return
-    col_starts, max_depth = calc_max_col_space(calc_len(row_start, row_stop, 1), col_stop-col_start)
+    col_starts, max_depth = calc_max_col_space(calc_len(row_start+1, row_stop, 1), col_stop-col_start)
     #col_buffer= np.empty(col_starts[-1], dtype=cols_in.dtype)
     col_buffer= np.empty(col_starts[-1], dtype=np.int64)
 
@@ -99,7 +99,7 @@ def __smawk_iter(row_start, row_stop, col_start, col_stop, calculator, result, c
     while True:
         step_size = 2**depth
         #rows = rows_in[step_size-1::step_size]
-        curr_start = row_start + step_size-1
+        curr_start = row_start + step_size
         cols = col_buffer[col_starts[depth]:col_starts[depth+1]]
         #print(cols, row_stop)
         row_len = calc_len(curr_start, row_stop, step_size)
@@ -108,7 +108,7 @@ def __smawk_iter(row_start, row_stop, col_start, col_stop, calculator, result, c
         if row_len==0:
             break
         if len(cols)==1:
-            for r in range(curr_start, row_stop, step_size):
+            for r in range(curr_start-1, row_stop, step_size):
                 result[r]=cols[0]
             break
         S = col_buffer[col_starts[depth+1]:]#col_starts[depth+2]]
@@ -118,13 +118,13 @@ def __smawk_iter(row_start, row_stop, col_start, col_stop, calculator, result, c
         #_cols = col_buffer[col_starts[depth+1]:col_ends[depth+1]]
         #print(_cols)
         #print()
-        result[curr_start]=col_buffer[col_starts[depth+1]]
+        result[curr_start-1]=col_buffer[col_starts[depth+1]]
         depth+=1
     max_depth=depth
 
     for depth in range(max_depth, -1, -1):
         step_size = 2**depth
-        curr_start = row_start + step_size-1
+        curr_start = row_start + step_size
         row_len = calc_len(curr_start, row_stop, step_size)
 
         #print(rows)

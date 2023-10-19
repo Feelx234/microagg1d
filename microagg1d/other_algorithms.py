@@ -15,17 +15,17 @@ def __simple_dynamic_program(n, k, calculator):
         min_vals[i] = np.inf
         back_tracks[i]=-1
     for i in range(k-1, 2*k-1):
-        min_vals[i] = calculator.calc(0,i)
+        min_vals[i] = calculator.calc(0,i+1)
         back_tracks[i]=-1
 
     for i in range(2*k-1, n):
         #print("i", i)
         min_index = i-2*k+1
         #print("min", min_index)
-        prev_min_val = min_vals[min_index] + calculator.calc(min_index+1, i)
+        prev_min_val = min_vals[min_index] + calculator.calc(min_index+1, i+1)
         for j in range(i-2*k + 2, i-k+1):
             #print(j, min_vals[j], prev_min_val)
-            new_val = min_vals[j] + calculator.calc(j+1, i)
+            new_val = min_vals[j] + calculator.calc(j+1, i+1)
             if  new_val < prev_min_val:
                 min_index = j
                 prev_min_val = new_val
@@ -48,7 +48,7 @@ def __simple_dynamic_program2(n, k, calculator):
         min_vals[i] = np.inf
         back_tracks[i]=-1
     for i in range(k-1, 2*k-1):
-        min_vals[i] = calculator.calc(0,i)
+        min_vals[i] = calculator.calc(0,i+1)
         back_tracks[i]=-1
 
     prev_min_index = 0
@@ -56,10 +56,10 @@ def __simple_dynamic_program2(n, k, calculator):
         #print("i", i)
         min_index = right-2*k+1
         #print("min", min_index)
-        prev_min_val = min_vals[min_index] + calculator.calc(min_index+1, right)
+        prev_min_val = min_vals[min_index] + calculator.calc(min_index+1, right+1)
         for left in range(max(right-2*k + 2, prev_min_index), right-k+1):
             #print(j, min_vals[j], prev_min_val)
-            new_val = min_vals[left] + calculator.calc(left+1, right)
+            new_val = min_vals[left] + calculator.calc(left+1, right+1)
             if  new_val < prev_min_val:
                 min_index = left
                 prev_min_val = new_val
