@@ -10,7 +10,7 @@ def __wilber2(n, wil_calculator):
     this is an implementation of the proposed algorithm
     from "The concave least weight subsequence problem revisited" by Robert Wilber 1987
     """
-    F = np.empty(n, dtype=np.int32)
+    F = np.empty(n, dtype=np.int64)
     F_vals = wil_calculator.F_vals
     H = np.empty(n, dtype=np.int32)
     H_vals = np.empty(n+1, dtype=np.float64)
@@ -60,7 +60,7 @@ def __galil_park2(n, wil_calculator):
     This is an implementation of the proposed algorithm
     from "A Linear-Time Algorithm for Concave One-Dimensional Dynamic Programming" by Zvi Galil and Kunsoo Park 1989
     """
-    F = np.empty(n, dtype=np.int32)
+    F = np.empty(n, dtype=np.int64)
     F_vals = wil_calculator.F_vals
     N = np.empty(n, dtype=np.int32)
     N_vals =  np.inf * np.ones(n+1, dtype=np.float64)
@@ -124,7 +124,7 @@ def __galil_park2(n, wil_calculator):
 def __staggered2(n, wil_calculator, k):
     """ Solves the dynamic problem in O(n)
     """
-    F = np.empty(n, dtype=np.int32)
+    F = np.empty(n, dtype=np.int64)
     F_vals = wil_calculator.F_vals
     F_vals[0]=0
     col_buffer = np.empty(2*n+2, dtype=np.int64)

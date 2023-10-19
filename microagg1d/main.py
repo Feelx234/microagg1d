@@ -1,5 +1,5 @@
 import numpy as np
-from microagg1d.user_facing import _sse_wilber2, _sse_galil_park2, _sse_simple_dynamic_program2
+from microagg1d.user_facing import _sse_wilber2, _sse_galil_park2, _sse_simple_dynamic_program2, _sae_user, _sse_staggered2
 from microagg1d.common import trivial_cases
 
 USE_CACHE=True
@@ -13,14 +13,14 @@ def undo_argsort(sorted_arr, sort_order):
     return sorted_arr[revert]
 
 
-def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1):
+def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1, cost="sse"):
     """Performs optimal 1d univariate microaggregation"""
     x = np.squeeze(np.asarray(x))
     assert len(x.shape)==1, "provided array is not 1d"
     assert k > 0, f"negative or zero values for k({k}) are not supported"
     assert k <= len(x), f"values of k({k}) larger than the length of the provided array ({len(x)}) are not supported"
 
-    assert method in ("auto", "simple", "wilber", "galil_park"), "invalid method supplied"
+    assert method in ("auto", "simple", "wilber", "galil_park", "staggered"), "invalid method supplied"
     if method == "auto":
         if k <= 21: # 21 determined emperically
             method = "simple"
@@ -34,13 +34,17 @@ def optimal_univariate_microaggregation_1d(x, k, method="auto", stable=1):
     if is_trivial:
         return trivial_result
 
-
-    if method=="simple":
-        clusters = _sse_simple_dynamic_program2(x, k, stable=stable)
-    elif method=="wilber":
-        clusters = _sse_wilber2(x, k, stable=stable)
-    elif method=="galil_park":
-        clusters = _sse_galil_park2(x, k, stable=stable)
-    else:
-        raise NotImplementedError("Should not be reachable")
+    if cost=="sse":
+        if method=="simple":
+            clusters = _sse_simple_dynamic_program2(x, k, stable=stable)
+        elif method=="wilber":
+            clusters = _sse_wilber2(x, k, stable=stable)
+        elif method=="galil_park":
+            clusters = _sse_galil_park2(x, k, stable=stable)
+        elif method=="staggered":
+            clusters = _sse_staggered2(x, k, stable=stable)
+        else:
+            raise NotImplementedError("Should not be reachable")
+    elif cost=="sae":
+        clusters = _sae_user(x, k, method)
     return undo_argsort(clusters, order)

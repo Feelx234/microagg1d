@@ -3,12 +3,11 @@ import unittest
 from functools import partial
 import numpy as np
 from numpy.testing import assert_array_equal
-from microagg1d.old_algorithms import wilber, _wilber, _galil_park
 from microagg1d.main import optimal_univariate_microaggregation_1d
 from microagg1d.user_facing import _sse_galil_park2, _sse_staggered2, _sse_simple_dynamic_program2, _sse_simple_dynamic_program
 from microagg1d.educational_algorithms import wilber_edu, conventional_algorithm
 from microagg1d.common import compute_cluster_cost_sorted
-from microagg1d.sse_cost import SSECostCalculator
+from microagg1d.cost_sse import SSECostCalculator
 
 def my_test_algorithm(self, algorithm):
     for k, solution in self.solutions.items():
@@ -37,15 +36,6 @@ class Test8Elements(unittest.TestCase):
         my_test_algorithm(self, partial(conventional_algorithm, full=True, should_print=False))
 
 
-# wilber
-    # def test_wilber(self):
-    #     my_test_algorithm(self, wilber)
-
-    # def test__wilber_stable_0(self):
-    #     my_test_algorithm(self, partial(_wilber, stable=0))
-
-    # def test__wilber_stable_1(self):
-    #     my_test_algorithm(self, partial(_wilber, stable=1))
 
 # simply dynamic program
     def test__sse_simple_dynamic_program(self):
@@ -84,9 +74,6 @@ class Test8Elements(unittest.TestCase):
 
 
 # simple staggered 2
-#    def test__staggered2(self):
-#        my_test_algorithm(self, _staggered2)
-
     def test__sse_staggered2_stable_0(self):
         my_test_algorithm(self, partial(_sse_staggered2, stable=0))
 
@@ -95,6 +82,15 @@ class Test8Elements(unittest.TestCase):
 
 
 
+# wilber
+    # def test_wilber(self):
+    #     my_test_algorithm(self, wilber)
+
+    # def test__wilber_stable_0(self):
+    #     my_test_algorithm(self, partial(_wilber, stable=0))
+
+    # def test__wilber_stable_1(self):
+    #     my_test_algorithm(self, partial(_wilber, stable=1))
 
     # def test_wilber_edu(self):
     #     my_test_algorithm(self, partial(wilber_edu, should_print=False))

@@ -3,7 +3,7 @@ from numba import njit, float64, int64
 from microagg1d.smawk_iter import _smawk_iter
 from microagg1d.common import convert_implicit_to_explicit_clustering
 from microagg1d.common import calc_cumsum, trivial_cases
-from microagg1d.sse_cost import FasterAdaptedSSECostCalculator, StableAdaptedSSECostCalculator, AdaptedSSECostCalculator
+from microagg1d.cost_sse import FasterAdaptedSSECostCalculator, StableAdaptedSSECostCalculator, AdaptedSSECostCalculator
 USE_CACHE=True
 
 

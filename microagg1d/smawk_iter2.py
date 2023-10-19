@@ -77,7 +77,7 @@ def _smawk_iter(row_start, row_stop, col_start, col_stop, calculator, result):
     #print("rows", row_start, row_stop)
     if row_start-row_stop == 0 or col_stop-col_start==0:
         return
-    col_starts, max_depth = calc_max_col_space(calc_len(row_start+1, row_stop, 1), col_stop-col_start)
+    col_starts, _ = calc_max_col_space(calc_len(row_start+1, row_stop, 1), col_stop-col_start)
     #col_buffer= np.empty(col_starts[-1], dtype=cols_in.dtype)
     col_buffer= np.empty(col_starts[-1], dtype=np.int64)
 

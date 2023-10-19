@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-from microagg1d.sse_cost import SSECostCalculator, AdaptedSSECostCalculator, FasterAdaptedSSECostCalculator, FasterSSECostCalculator, StableAdaptedSSECostCalculator
-from microagg1d.sse_cost import StableSSECostCalculator, NoPrecomputeSSECostCalculator
+from microagg1d.cost_sse import SSECostCalculator, AdaptedSSECostCalculator, FasterAdaptedSSECostCalculator, FasterSSECostCalculator, StableAdaptedSSECostCalculator
+from microagg1d.cost_sse import StableSSECostCalculator, NoPrecomputeSSECostCalculator
 from microagg1d.common import calc_cumsum
 
 

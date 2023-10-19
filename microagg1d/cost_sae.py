@@ -1,7 +1,9 @@
 import numpy as np
-from numba import njit, float64, int64, bool_
+from numba import njit, float64, int64
 from numba.experimental import jitclass
 from microagg1d.common import calc_cumsum
+
+
 
 @njit
 def calc_sorted_median(arr, lb = 0, ub = -1):
@@ -14,10 +16,13 @@ def calc_sorted_median(arr, lb = 0, ub = -1):
     else:
         return arr[half]
 
+
+
 @njit
 def calc_sae_from_cumsum(cumsum, i, j):
     l = (j-i)//2
     return cumsum[j] - cumsum[j - l] - (cumsum[i+l] - cumsum[i])
+
 
 
 @jitclass([('cumsum', float64[:]), ('k', int64), ("F_vals", float64[:]), ("SMALL_VAL", float64), ("LARGE_VAL", float64)])
@@ -28,29 +33,31 @@ class AdaptedSAECostCalculator:
         self.k = k
         self.F_vals = F_vals # F_vals[i] is min_l w_li
         n = len(arr) - 1
+        # the largest cluster cost is 2 * n * the maximum difference
         self.SMALL_VAL = (arr[-1] - arr[0]) * n
         self.LARGE_VAL = self.SMALL_VAL * (1 + n)
 
-    def calc(self, j, i): # i <-> j interchanged is not a bug!
+    def calc(self, i, j): # i <-> j interchanged is not a bug!
         """This function computes the w_{ij} values introduced"""
-        if j < i:
+        if j <= i:
             return np.inf
 
-        if not (j+1 - i >= self.k):
+        if not (j - i >= self.k):
             return self.LARGE_VAL + self.SMALL_VAL*i
-        if not (j+1 - i <= 2 * self.k - 1):
+        if not (j - i <= 2 * self.k - 1):
             return self.LARGE_VAL - self.SMALL_VAL*i
         return calc_sae_from_cumsum(self.cumsum, i, j) + self.F_vals[i]
 
 
-@jitclass([('cumsum', float64[:]), ("F_vals", float64[:])])
+
+@jitclass([('cumsum', float64[:])])
 class SAECostCalculator:
     """The standard calculator the microaggregation-adapted SSE cost"""
-    def __init__(self, arr, F_vals):
+    def __init__(self, arr):
         self.cumsum = calc_cumsum(arr)
-        self.F_vals = F_vals # F_vals[i] is min_l w_li
 
-    def calc(self, j, i): # i <-> j interchanged is not a bug!
+    def calc(self, i, j):
         """This function computes the w_{ij} values introduced"""
-
-        return calc_sae_from_cumsum(self.cumsum, i, j) + self.F_vals[i]
+        if j <= i:
+            return np.inf
+        return calc_sae_from_cumsum(self.cumsum, i, j)

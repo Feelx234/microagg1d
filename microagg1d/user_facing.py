@@ -1,8 +1,10 @@
 import numpy as np
 from numba import njit, float64, int64
+from numba import types
 from microagg1d.common import calc_cumsum, convert_implicit_to_explicit_clustering
-from microagg1d.sse_cost import AdaptedSSECostCalculator, StableAdaptedSSECostCalculator, FasterAdaptedSSECostCalculator
-from microagg1d.sse_cost import NoPrecomputeSSECostCalculator, SSECostCalculator, FasterSSECostCalculator, StableSSECostCalculator
+from microagg1d.cost_sse import AdaptedSSECostCalculator, StableAdaptedSSECostCalculator, FasterAdaptedSSECostCalculator
+from microagg1d.cost_sse import NoPrecomputeSSECostCalculator, SSECostCalculator, FasterSSECostCalculator, StableSSECostCalculator
+from microagg1d.cost_sae import AdaptedSAECostCalculator, SAECostCalculator
 from microagg1d.linear_algorithms import __staggered2, __galil_park2, __wilber2
 from microagg1d.other_algorithms import __simple_dynamic_program, __simple_dynamic_program2
 USE_CACHE = True
@@ -131,3 +133,24 @@ def _sse_simple_dynamic_program2(x, k, stable=1):
         return __simple_dynamic_program2(n, k, calculator)
     else:
         assert False
+
+
+
+@njit([(float64[:], int64, types.unicode_type)], cache=USE_CACHE)
+def _sae_user(v, k, algorithm):
+    # unfortunately a lot of copy pasta as numba can't handle it yet
+    n = len(v)
+    if algorithm=="galil_park":
+        cost_calculator = AdaptedSAECostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__galil_park2(n, cost_calculator))
+    elif algorithm=="wilber":
+        cost_calculator = AdaptedSAECostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__wilber2(n, cost_calculator))
+    elif algorithm=="staggered":
+        cost_calculator = AdaptedSAECostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__staggered2(n, cost_calculator, k))
+    elif algorithm=="simple":
+        cost_calculator = SAECostCalculator(v)
+        return __simple_dynamic_program2(n, k, cost_calculator)
+    else:
+        raise NotImplementedError("Wrong algorithm string provided")
