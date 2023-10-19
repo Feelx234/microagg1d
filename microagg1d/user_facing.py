@@ -6,6 +6,7 @@ from microagg1d.cost_sse import AdaptedSSECostCalculator, StableAdaptedSSECostCa
 from microagg1d.cost_sse import NoPrecomputeSSECostCalculator, SSECostCalculator, FasterSSECostCalculator, StableSSECostCalculator
 from microagg1d.cost_sae import AdaptedSAECostCalculator, SAECostCalculator
 from microagg1d.cost_round import AdaptedRoundUpCostCalculator, RoundUpCostCalculator, RoundDownCostCalculator, AdaptedRoundDownCostCalculator
+from microagg1d.cost_maxdist import MaxDistCostCalculator, AdaptedMaxDistCostCalculator
 from microagg1d.algorithms_linear import __staggered2, __galil_park2, __wilber2
 from microagg1d.algorithms_other import __simple_dynamic_program, __simple_dynamic_program2
 USE_CACHE = True
@@ -178,6 +179,7 @@ def _roundup_user(v, k, algorithm):
         raise NotImplementedError("Wrong algorithm string provided")
 
 
+
 @njit([(float64[:], int64, types.unicode_type)], cache=USE_CACHE)
 def _rounddown_user(v, k, algorithm):
     # unfortunately a lot of copy pasta as numba can't handle it yet
@@ -193,6 +195,27 @@ def _rounddown_user(v, k, algorithm):
         return convert_implicit_to_explicit_clustering(__staggered2(n, cost_calculator, k))
     elif algorithm=="simple":
         cost_calculator = RoundDownCostCalculator(v)
+        return __simple_dynamic_program2(n, k, cost_calculator)
+    else:
+        raise NotImplementedError("Wrong algorithm string provided")
+
+
+
+@njit([(float64[:], int64, types.unicode_type)], cache=USE_CACHE)
+def _maxdist_user(v, k, algorithm):
+    # unfortunately a lot of copy pasta as numba can't handle it yet
+    n = len(v)
+    if algorithm=="galil_park":
+        cost_calculator = AdaptedMaxDistCostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__galil_park2(n, cost_calculator))
+    elif algorithm=="wilber":
+        cost_calculator = AdaptedMaxDistCostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__wilber2(n, cost_calculator))
+    elif algorithm=="staggered":
+        cost_calculator = AdaptedMaxDistCostCalculator(v, k, np.empty(n+1, dtype=np.float64))
+        return convert_implicit_to_explicit_clustering(__staggered2(n, cost_calculator, k))
+    elif algorithm=="simple":
+        cost_calculator = MaxDistCostCalculator(v)
         return __simple_dynamic_program2(n, k, cost_calculator)
     else:
         raise NotImplementedError("Wrong algorithm string provided")
