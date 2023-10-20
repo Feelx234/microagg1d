@@ -1,20 +1,21 @@
+"""
+    Setup file for microagg1d.
+    Use setup.cfg to configure your project.
+
+    This file was generated with PyScaffold 4.5.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
 from setuptools import setup
 
-with open("README.md", "r", encoding="utf-8") as f:
-    long_description = f.read()
-
-setup(
-    name='microagg1d',
-    version='0.2.0',
-    packages=['microagg1d', 'microagg1d.tests'],
-    author='Felix Stamm',
-    author_email='felix.stamm@cssh.rwth-aachen.de',
-    description='A python package for optimal univariate microaggregation in 1d',
-    install_requires=[
-              'numpy',
-              'numba',
-          ],
-    python_requires='>=3.8',
-    long_description=long_description,
-    long_description_content_type="text/markdown"
-)
+if __name__ == "__main__":
+    try:
+        setup(use_scm_version={"version_scheme": "no-guess-dev"})
+    except:  # noqa
+        print(
+            "\n\nAn error occurred while building the project, "
+            "please ensure you have the most updated version of setuptools, "
+            "setuptools_scm and wheel with:\n"
+            "   pip install -U setuptools setuptools_scm wheel\n\n"
+        )
+        raise

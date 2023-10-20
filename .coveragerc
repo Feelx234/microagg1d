@@ -1,20 +1,28 @@
+# .coveragerc to control coverage.py
+[run]
+branch = True
+source = microagg1d
+# omit = bad_file.py
+
+[paths]
+source =
+    src/
+    */site-packages/
+
 [report]
+# Regexes for lines to exclude from consideration
 exclude_lines =
-        pragma: no cover
-        if __name__ == .__main__.:
-        def __repr__
-        def __eq__
-        def __lt__
-        raise RuntimeWarning
-        raise NotImplementedError
-        except ImportError:
-        @abstractmethod
-        @abc.abstractmethod
+    # Have to re-enable the standard pragma
+    pragma: no cover
 
-omit =
-        microagg1d/tests/*
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
 
-# pytest --cov microagg1d --cov-report html .
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
 
-# git tag -a v0.1.0 -m "Publish version 0.1.0"
-# git push origin --tags
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
