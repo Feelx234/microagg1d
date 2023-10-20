@@ -47,7 +47,7 @@ def __simple_dynamic_program2(n, k, calculator):
     for i in range(0, k - 1):
         min_vals[i] = np.inf
         back_tracks[i] = -1
-    for i in range(k - 1, 2 * k - 1):
+    for i in range(k - 1, min(2 * k - 1, n)):
         min_vals[i] = calculator.calc(0, i + 1)
         back_tracks[i] = -1
 

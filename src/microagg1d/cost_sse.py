@@ -226,6 +226,8 @@ class FasterSSECostCalculator:
         self.cumsum = calc_cumsum(v)
 
     def calc(self, i, j):
+        if j <= i:
+            return np.inf
         n = j - i
         delta = self.cumsum[j] - self.cumsum[i]
         return -delta * delta / n
@@ -297,6 +299,8 @@ class NoPrecomputeSSECostCalculator:
         self.v = v
 
     def calc(self, i, j):
+        if j <= i:
+            return np.inf
         return sse_stable(self.v[i:j])
         # mean = np.mean(self.v[i:j+1])
         # return np.sum(np.square(self.v[i:j+1]-mean))
@@ -322,6 +326,6 @@ class StableSSECostCalculator:
         self.cell_size = cell_size
 
     def calc(self, i, j):
-        if j == i:
-            return 0
+        if j <= i:
+            return np.inf
         return calc_objective_cell(self.cumsum, self.cumsum2, self.cell_size, i, j - 1)

@@ -26,3 +26,8 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
+
+omit =
+    */algorithms_educational.py
+    */algorithms_old.py
+    */smawk_old.py

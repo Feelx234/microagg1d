@@ -12,7 +12,7 @@ from microagg1d.cost_sse import (
     StableAdaptedSSECostCalculator,
     StableSSECostCalculator,
 )
-
+from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
 def get_sse_calculators(v, k):
     cumsum = calc_cumsum(v)
@@ -27,7 +27,7 @@ def get_sse_calculators(v, k):
     ], [FasterSSECostCalculator(v), FasterAdaptedSSECostCalculator(cumsum, k, F_vals)]
 
 
-class RegularizedKmeans(unittest.TestCase):
+class BasicTests(unittest.TestCase):
     def test_size1_cluster(self):
         faster_results = -np.square(np.arange(10))
         self.standard_procedure(
@@ -51,6 +51,14 @@ class RegularizedKmeans(unittest.TestCase):
         self.standard_procedure(
             cluster_size=4, normal_result=5.0, faster_results=faster_results
         )
+
+    def test_infinity(self):
+        v = np.arange(10, dtype=np.float64)
+        calculators, faster_calculators = get_sse_calculators(v, k=2)
+        invalid_val = np.inf
+        for calculator in calculators+faster_calculators:
+            self.assertEqual(calculator.calc(1, 0), invalid_val, msg=f"{calculator.__class__}")
+            self.assertEqual(calculator.calc(0, 0), invalid_val, msg=f"{calculator.__class__}")
 
     def standard_procedure(self, cluster_size, normal_result, faster_results):
         v = np.arange(10, dtype=np.float64)
@@ -76,6 +84,13 @@ class RegularizedKmeans(unittest.TestCase):
                     msg=f"{i} {calculator.__class__}",
                 )
 
+
+class BasicTestsNonCompiled(BasicTests):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
 
 if __name__ == "__main__":
     unittest.main()

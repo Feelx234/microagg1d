@@ -6,6 +6,7 @@ from numba.experimental import jitclass
 from numpy.testing import assert_array_equal
 
 from microagg1d.smawk_iter2 import _smawk_iter
+from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
 
 @jitclass([("A", float64[:, :])])
@@ -48,6 +49,13 @@ class TestSMAWKIter(unittest.TestCase):
         solution = np.argmin(test_arr, axis=1)
         assert_array_equal(solution, smawk_iter_array(test_arr))
 
+
+class TestSMAWKIterNonCompiled(TestSMAWKIter):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
 
 if __name__ == "__main__":
     unittest.main()

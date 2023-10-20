@@ -13,6 +13,7 @@ from microagg1d.user_facing import (
     _sse_simple_dynamic_program2,
     _sse_staggered2,
 )
+from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
 
 def my_test_algorithm(self, algorithm):
@@ -87,6 +88,9 @@ class Test8Elements(unittest.TestCase):
     def test__sse_staggered2_stable_1(self):
         my_test_algorithm(self, partial(_sse_staggered2, stable=1))
 
+    def test__sse_staggered2_stable_2(self):
+        my_test_algorithm(self, partial(_sse_staggered2, stable=2))
+
     # wilber
     # def test_wilber(self):
     #     my_test_algorithm(self, wilber)
@@ -111,12 +115,17 @@ class Test8Elements(unittest.TestCase):
     #         my_test_algorithm(self, partial(_galil_park, stable=0))
 
     # galil park 2
+    def test_sse_galil_park2_stable_2(self):
+        my_test_algorithm(self, partial(_sse_galil_park2, stable=2))
+
     def test_sse_galil_park2_stable_1(self):
         my_test_algorithm(self, partial(_sse_galil_park2, stable=1))
 
     def test_sse_galil_park2_stable_0(self):
         my_test_algorithm(self, partial(_sse_galil_park2, stable=0))
 
+
+# test main
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(
             self, partial(optimal_univariate_microaggregation_1d, method="simple")
@@ -130,6 +139,11 @@ class Test8Elements(unittest.TestCase):
     def test_optimal_univariate_microaggregation_galil_park(self):
         my_test_algorithm(
             self, partial(optimal_univariate_microaggregation_1d, method="galil_park")
+        )
+
+    def test_optimal_univariate_microaggregation_staggered(self):
+        my_test_algorithm(
+            self, partial(optimal_univariate_microaggregation_1d, method="staggered")
         )
 
 
@@ -258,6 +272,22 @@ class TestAgreement(unittest.TestCase):
 
 # n=1000000 seed=0 k=5 does not agree!
 
+
+class Test8ElementsNonCompiled(Test8Elements):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
+
+
+
+class TestArrayElementsNonCompiled(TestArray):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
 
 if __name__ == "__main__":
     unittest.main()

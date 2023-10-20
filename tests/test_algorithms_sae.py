@@ -6,6 +6,7 @@ import numpy as np
 from microagg1d.common import compute_cluster_cost_sorted
 from microagg1d.cost_sae import AdaptedSAECostCalculator, SAECostCalculator
 from microagg1d.user_facing import _sae_user
+from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
 
 class TestMedianCosts(unittest.TestCase):
@@ -105,6 +106,23 @@ class TestArray(Test8Elements):
             7: np.array([0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]),
             8: np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
         }
+
+
+class Test8ElementsNonCompiled(Test8Elements):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
+
+
+
+class TestArrayElementsNonCompiled(TestArray):
+    def setUp(self):
+        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+
+    def tearDown(self) -> None:
+        restore_to_class(self.cleanup)
 
 
 if __name__ == "__main__":
