@@ -39,7 +39,7 @@ class TestArangeGeneration(unittest.TestCase):
             np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3]),
             np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3]),
         ]
-        for alg_input, sol_solution in zip(inputs, solutions:
+        for alg_input, sol_solution in zip(inputs, solutions):
             arr, solution = create_pair_known_sizes(*alg_input, 0)
             assert_array_equal(arr, np.float64(sol_solution), f"input={alg_input}")
             assert_array_equal(solution, sol_solution, f"input={alg_input}")
