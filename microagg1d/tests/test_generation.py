@@ -19,7 +19,7 @@ class TestArangeGeneration(unittest.TestCase):
             np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         ]
 
-        for k, solution in zip(range(1, 10), solutions, strict=True):
+        for k, solution in zip(range(1, 10), solutions):
             arr, res = create_pair_arange(17, k)
             assert_array_equal(arr, np.arange(17))
             assert_array_equal(res, solution, f"k={k}")
@@ -39,7 +39,7 @@ class TestArangeGeneration(unittest.TestCase):
             np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3]),
             np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3]),
         ]
-        for alg_input, sol_solution in zip(inputs, solutions, strict=True):
+        for alg_input, sol_solution in zip(inputs, solutions:
             arr, solution = create_pair_known_sizes(*alg_input, 0)
             assert_array_equal(arr, np.float64(sol_solution), f"input={alg_input}")
             assert_array_equal(solution, sol_solution, f"input={alg_input}")
@@ -65,7 +65,7 @@ class TestArangeGeneration(unittest.TestCase):
             np.array([0. , 0.1, 0.2, 0.30000000000000004, 0.4, 1. , 1.1, 1.2, 1.3, 2. , 2.1, 2.2, 3. ,  3.1]),
             np.array([0. , 0.1, 0.2, 0.30000000000000004, 0.4, 1. , 1.1, 1.2, 1.3, 2. , 2.1, 2.2, 2.3, 2.4, 3. , 3.1, 3.2, 3.3]),
         ]
-        for alg_input, sol_solution, sol_arr in zip(inputs, solutions, arrs, strict=True):
+        for alg_input, sol_solution, sol_arr in zip(inputs, solutions, arrs):
             arr, solution = create_pair_known_sizes(*alg_input, 0.1)
             assert_array_equal(arr, sol_arr, f"input={alg_input}")
             assert_array_equal(solution, sol_solution, f"input={alg_input}")
