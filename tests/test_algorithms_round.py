@@ -205,37 +205,43 @@ class TestArrayDown(Test8ElementsDown):
 
 class Test8ElementsNonCompiled(Test8Elements):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
 
 
 class TestArrayElementsNonCompiled(TestArray):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
 
 
 class Test8DownElementsNonCompiled(Test8ElementsDown):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
 
 
 class TestArrayDownElementsNonCompiled(TestArrayDown):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
+
 
 if __name__ == "__main__":
     unittest.main()

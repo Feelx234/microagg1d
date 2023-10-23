@@ -52,10 +52,13 @@ class TestSMAWKIter(unittest.TestCase):
 
 class TestSMAWKIterNonCompiled(TestSMAWKIter):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
+
 
 if __name__ == "__main__":
     unittest.main()

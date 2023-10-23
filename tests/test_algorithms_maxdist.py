@@ -9,6 +9,7 @@ from microagg1d.main import optimal_univariate_microaggregation_1d
 from microagg1d.user_facing import _maxdist_user
 from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
+
 class TestMedianCosts(unittest.TestCase):
     def test_maxdist(self):
         arr = np.array([1, 2, 3, 4, 5, 6], dtype=np.float64)
@@ -67,7 +68,6 @@ class Test8Elements(unittest.TestCase):
         )
 
 
-
 class Test7Elements(Test8Elements):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -117,25 +117,24 @@ class TestArray(Test8Elements):
         }
 
 
-
 class Test8ElementsNonCompiled(Test8Elements):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
 
 
 class TestArrayElementsNonCompiled(TestArray):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
-
-
 
 
 if __name__ == "__main__":

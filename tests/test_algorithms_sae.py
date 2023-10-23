@@ -110,16 +110,19 @@ class TestArray(Test8Elements):
 
 class Test8ElementsNonCompiled(Test8Elements):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
 
 
-
 class TestArrayElementsNonCompiled(TestArray):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)

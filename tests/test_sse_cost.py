@@ -14,6 +14,7 @@ from microagg1d.cost_sse import (
 )
 from microagg1d.utils_for_test import remove_from_class, restore_to_class
 
+
 def get_sse_calculators(v, k):
     cumsum = calc_cumsum(v)
     cumsum2 = calc_cumsum(np.square(v))
@@ -56,9 +57,13 @@ class BasicTests(unittest.TestCase):
         v = np.arange(10, dtype=np.float64)
         calculators, faster_calculators = get_sse_calculators(v, k=2)
         invalid_val = np.inf
-        for calculator in calculators+faster_calculators:
-            self.assertEqual(calculator.calc(1, 0), invalid_val, msg=f"{calculator.__class__}")
-            self.assertEqual(calculator.calc(0, 0), invalid_val, msg=f"{calculator.__class__}")
+        for calculator in calculators + faster_calculators:
+            self.assertEqual(
+                calculator.calc(1, 0), invalid_val, msg=f"{calculator.__class__}"
+            )
+            self.assertEqual(
+                calculator.calc(0, 0), invalid_val, msg=f"{calculator.__class__}"
+            )
 
     def standard_procedure(self, cluster_size, normal_result, faster_results):
         v = np.arange(10, dtype=np.float64)
@@ -87,10 +92,13 @@ class BasicTests(unittest.TestCase):
 
 class BasicTestsNonCompiled(BasicTests):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
+
 
 if __name__ == "__main__":
     unittest.main()

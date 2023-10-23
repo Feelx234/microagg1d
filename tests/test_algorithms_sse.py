@@ -124,8 +124,7 @@ class Test8Elements(unittest.TestCase):
     def test_sse_galil_park2_stable_0(self):
         my_test_algorithm(self, partial(_sse_galil_park2, stable=0))
 
-
-# test main
+    # test main
     def test_optimal_univariate_microaggregation_simple(self):
         my_test_algorithm(
             self, partial(optimal_univariate_microaggregation_1d, method="simple")
@@ -275,19 +274,23 @@ class TestAgreement(unittest.TestCase):
 
 class Test8ElementsNonCompiled(Test8Elements):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
-
 
 
 class TestArrayElementsNonCompiled(TestArray):
     def setUp(self):
-        self.cleanup = remove_from_class(self.__class__.__bases__[0], allowed_packages=["microagg1d"])
+        self.cleanup = remove_from_class(
+            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
+        )
 
     def tearDown(self) -> None:
         restore_to_class(self.cleanup)
+
 
 if __name__ == "__main__":
     unittest.main()
