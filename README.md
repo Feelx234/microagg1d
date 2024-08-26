@@ -1,5 +1,6 @@
 [![build](https://github.com/Feelx234/microagg1d/actions/workflows/ci.yaml/badge.svg)](https://github.com/Feelx234/microagg1d/actions)
 [![Coverage Status](https://coveralls.io/repos/github/Feelx234/microagg1d/badge.svg)](https://coveralls.io/github/Feelx234/microagg1d)
+[![arXiv:2401.02381](https://img.shields.io/badge/arXiv-2401.02381-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2401.02381)
 
 microagg1d
 ========
