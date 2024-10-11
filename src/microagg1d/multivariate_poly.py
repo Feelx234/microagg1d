@@ -1,8 +1,20 @@
+# pyright: reportCallIssue=false, reportAttributeAccessIssue=false
 import numpy as np
 from numba import njit
-from numba.typed import List
+from numba.typed import List # pylint: disable=no-name-in-module
 from numba.types import int16, int32, int64
 
+
+
+
+@njit(cache=True)
+def _set_seed(seed):
+    """Set the need. This needs to be done within numba @njit function"""
+    np.random.seed(seed)
+
+def set_both_seeds(seed):
+    np.random.seed(seed)
+    _set_seed(seed)
 
 
 @njit([(int16[:], int32), (int32[:], int32), (int64[:], int64)],cache=True)
@@ -96,9 +108,9 @@ def forest(closest_neighbors):
     current_size = 0
 
     partition = np.full(n, -1, dtype=np.int64)
-    components = List()
+    components = List() # type: ignore
     num_edges = 0
-    
+
     order = np.random.permutation(n)
     for v in order:
         if partition[v]>=0:
@@ -132,21 +144,20 @@ def forest(closest_neighbors):
 
 
 
-@njit
+@njit(cache=True)
 def forest2(closest_neighbors):
     n = closest_neighbors.shape[0]
     k = closest_neighbors.shape[1]
 
     edges = np.empty((n,2), dtype=np.int64)
 
-    partitions = list()
+    partitions = List()
     for node in range(n):
-        l = list()
+        l = List()
         l.append(node)
         partitions.append(l)
     small_partitions = np.arange(n)
     num_small_partitions = n
-    position = np.arange(n)
     out_degree = np.zeros(n, dtype=np.int16)
     partition = np.arange(n, dtype=np.int64)
 
@@ -171,7 +182,6 @@ def forest2(closest_neighbors):
             # print(v, out_degree[v])
             if out_degree[v]>0:
                 continue
-            other_partition = -1
             for neigh in closest_neighbors[v]: # this may be randomized as well
                 # print(v, neigh, partition[v], partition[neigh] )
                 if partition[neigh]==partition[v]:
@@ -195,21 +205,20 @@ def forest2(closest_neighbors):
                 break
             if found:
                 break
-        assert found, found
-                
+        assert found
 
-    components = list()
+
+    components = List()
     for p in partitions:
         if len(p)>0:
             arr = np.empty(len(p), dtype=np.int64)
             for i, x in enumerate(p):
                 arr[i]=x
-            
             components.append(arr)
     return components, edges[:num_edges,:]
 
 
-
+@njit
 def find_subtree(pivot, avoid,  start_pos, neighbors, sub_tree_size, component):
     out = np.empty(len(start_pos), dtype=np.int64)
     out[0]=pivot
@@ -220,13 +229,11 @@ def find_subtree(pivot, avoid,  start_pos, neighbors, sub_tree_size, component):
     # print(sub_tree_size)
     sub_tree_size[avoid]=1
     sub_tree_size[pivot]=1
-    
     while q_len>0:
         q_len-=1
         node = q[q_len]
         start = start_pos[node]
         stop = start_pos[node+1]
-        
         for neigh in neighbors[start:stop]:
             # print("N", node, neigh)
             if sub_tree_size[neigh]==1:
@@ -241,59 +248,83 @@ def find_subtree(pivot, avoid,  start_pos, neighbors, sub_tree_size, component):
         sub_tree_size[node]=0
     return out[:out_len]
 
-
-def decompose_components(components, edges, k, num_nodes):
+@njit(cache=True)
+def decompose_components(components, edges, k, num_nodes, forbid_overlap=True):
     start_pos, neighbors, messages_still_pending = get_neighbors_from_edges(edges, num_nodes)
     # print(messages_still_pending)
     sub_tree_size=np.zeros_like(messages_still_pending)
-    s = list()
+    s = List()
     s.append(edges[0,0])
     s.pop()
 
-    candidate_components = list()
+    candidate_components = List()
     for component in components:
         steiners = s.copy()
         candidate_components.append((steiners, component))
 
-    final_components = list()
+    final_components = List()
     while len(candidate_components)>0:
         # print("main")
         steiners, component = candidate_components.pop()
         comp_edges = filter_edges(edges, component)
         # print(component)
         start_pos, neighbors, messages_still_pending = get_neighbors_from_edges(comp_edges, num_nodes)
-        res = split_component(steiners, component, k, start_pos, neighbors, messages_still_pending, sub_tree_size)
+        res = split_component(steiners, component, k, start_pos, neighbors, messages_still_pending, sub_tree_size, forbid_overlap)
+        if len(res)==1:
+            final_components.append(res[0])
+            continue
         for steiners, comp in res:
             # print("out", comp)
             if len(comp)-len(steiners) > max(2*k-1, 3*k-5):
                 candidate_components.append((steiners, comp))
             else:
                 final_components.append((steiners, comp))
-        
     return final_components
 
 
 
 
+@njit(cache=True)
+def clean_steiners(steiners, comp):
+    if len(steiners)==0:
+        return steiners, comp
+    out_steiners = steiners.copy()
+    out_steiners.clear()
+    for s in steiners:
+        if s in comp:
+            out_steiners.append(s)
+    return out_steiners, comp
 
-def split_component(steiners, component, k, start_pos, neighbors, messages_still_pending, sub_tree_size):
+
+def list_to_array(l):
+    out = np.empty(len(l), dtype=np.int64)
+    for i,x in enumerate(l):
+        out[i]=x
+    return out
+
+
+@njit(cache=True)
+def split_component(steiners, component, k, start_pos, neighbors, messages_still_pending, sub_tree_size, forbid_overlap):
     component = np.random.permutation(component)
     # print(component)
     s = len(component) - len(steiners)
-    l = list()
+    l = List()
 
     if s <= max(2*k-1, 3*k-5):
         l.append((steiners, component))
         return l
     steiners1 = steiners.copy()
     steiners2 = steiners.copy()
-    for i, pivot in enumerate(component):
+    # print()
+    for pivot in component:
         degree_pivot = start_pos[pivot+1]-start_pos[pivot]
-        if pivot in steiners:
+        if forbid_overlap and pivot in steiners:
+            # print("skip", pivot)
             continue
         if degree_pivot==1:
             continue
         sub_tree_sizes = hang_tree(pivot, component, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners)
+        # print(sub_tree_sizes)
         j = np.argmax(sub_tree_sizes[:,1])
         v = sub_tree_sizes[j,0]
         phi = sub_tree_sizes[j,1]
@@ -304,12 +335,12 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
         if phi>=k and s-phi >=k:
             comp1 = find_subtree(pivot, v, start_pos, neighbors, sub_tree_size, component)
             comp2 = find_subtree(v, pivot, start_pos, neighbors, sub_tree_size, component)
-            l.append((steiners1, comp1))
-            l.append((steiners2, comp2))
-            # print("A", pivot, list(l))
+            l.append(clean_steiners(steiners1, comp1))
+            l.append(clean_steiners(steiners2, comp2))
+            # print("A", pivot, List(l))
             return l
         elif s-phi == k-1:
-            if v in steiners:
+            if forbid_overlap and v in steiners:
                 continue
             comp1_p = find_subtree(pivot, v, start_pos, neighbors, sub_tree_size, component)
             # print("B1", comp1_p)
@@ -319,71 +350,94 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
             comp2 = find_subtree(v, pivot, start_pos, neighbors, sub_tree_size, component)
             # print("B", v, pivot, comp1, comp2)
             steiners2.append(v)
-            l.append((steiners1, comp1))
-            l.append((steiners2, comp2))
-            #print("B", pivot, v, list(l))
+            l.append(clean_steiners(steiners1, comp1))
+            l.append(clean_steiners(steiners2, comp2))
+            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            #print("B", pivot, v, List(l))
             return l
-        elif s-phi == k-1:
+        elif phi == k-1:
             comp1 = find_subtree(pivot, v, start_pos, neighbors, sub_tree_size, component)
-            comp2 = find_subtree(v, pivot, start_pos, neighbors, sub_tree_size, component)
-            comp2_p = np.empty(len(comp2)+1, dtype=comp1.dtype)
+            comp2_p = find_subtree(v, pivot, start_pos, neighbors, sub_tree_size, component)
+            comp2 = np.empty(len(comp2_p)+1, dtype=comp1.dtype)
             comp2[0]=pivot
             comp2[1:]=comp2_p
-            steiners2.append(v)
-            l.append((steiners1, comp1))
-            l.append((steiners2, comp2))
-            # print("C", pivot, list(l))
+            steiners1.append(v)
+            l.append(clean_steiners(steiners1, comp1))
+            l.append(clean_steiners(steiners2, comp2))
+            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            # print("C", pivot, List(l))
             return l
         else:
-            # print("D", pivot, list(l))
+            # print("D", pivot, List(l))
             num_subtrees = sub_tree_sizes.shape[0]
             order = np.random.permutation(num_subtrees)
             i_order = 0
-            tree_size = 0
-            while tree_size < k-1:
-                tree_size+=sub_tree_sizes[order[i_order],1]
+            comp1_size = 0
+            while comp1_size < k-1:
+                comp1_size+=sub_tree_sizes[order[i_order],1]
                 i_order+=1
             #print(sub_tree_sizes)
             #print(tree_size)
             add_pivot_to_1 = True
-            if s-tree_size == k-1:
-                add_pivot_to_1=False
+
+            size1 = comp1_size+1
+            size2 = s-comp1_size
+            assert size1>=k
+            assert size2>=k
+            if size1 < size2:
+                add_pivot_to_1=False # add to 2
             else:
                 add_pivot_to_1=True
-            comp1 = np.empty(tree_size+1, dtype=np.int64)
-            comp2 = np.empty(s-tree_size+1, dtype=np.int64)
+
+            comp1 = np.empty(size1+len(steiners), dtype=np.int64)
+            comp2 = np.empty(size2+len(steiners), dtype=np.int64)
+
+            # above size = s-1-comp1_size+1, the s-1 becasue the pivot is included in s, +1 because we always have the pivot
             comp1[0]=pivot
             comp2[0]=pivot
             i_comp1 = 1
             i_comp2 = 1
             if add_pivot_to_1:
-                steiners2.append(pivot) # the pivot is assigned to comp1, thus 2 is steiner
+                steiners1.append(pivot) # the pivot is assigned to comp1, thus 2 is steiner
             else:
-                steiners1.append(pivot)
-            
+                steiners2.append(pivot)
+
             for j in range(num_subtrees):
                 sub_node = sub_tree_sizes[order[j],0]
                 comp_tmp = find_subtree(sub_node, pivot, start_pos, neighbors, sub_tree_size, component)
+                # print(comp_tmp)
                 #print(j, sub_node, comp_tmp)
                 for sub_tree_member in comp_tmp:
                     if j < i_order:
+                        assert i_comp1<len(comp1)# , (j, i_order, i_comp1,sub_tree_sizes[order,:], comp_tmp, steiners )
                         comp1[i_comp1] = sub_tree_member
                         i_comp1+=1
                     else:
                         comp2[i_comp2] = sub_tree_member
                         i_comp2+=1
-            l.append((steiners1, comp1))
-            l.append((steiners2, comp2))
+            #assert i_comp1 == len(comp1)
+            #assert i_comp2 == len(comp2), (i_comp1, i_comp2, len(comp1), len(comp2), comp2, s, comp1_size, sub_tree_sizes)
+
+            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
+            assert len(set(comp2)-set(steiners2))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
+            l.append(clean_steiners(steiners1, comp1[:i_comp1]))
+            l.append(clean_steiners(steiners2, comp2[:i_comp2]))
             return l
         # l1 = split_component(steiners1, comp1, k, start_pos, neighbors, messages_still_pending, sub_tree_size, component)
-        # l.extend(l1)    
+        # l.extend(l1)
         # l2 = split_component(steiners2, comp2, k, start_pos, neighbors, messages_still_pending, sub_tree_size, component)
         # l.extend(l2)
-        
+
         return l
-    assert False  
+    if forbid_overlap: # we cannto split this further
+        l.append((steiners, component))
+        return l
+    else:
+        assert False #, (phi, sub_tree_sizes) # this is not allowed in overlapping MM
 
-
+@njit()
 def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners):
     # print()
     degree_pivot = start_pos[pivot+1]-start_pos[pivot]
@@ -422,7 +476,7 @@ def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tr
                 continue
             # print("  ", node, neigh)
             sub_tree_size[neigh]+=sub_tree_size[node]
-            
+
             if neigh == pivot:
                 out[num_out,0]=node
                 out[num_out,1]=sub_tree_size[node]
@@ -434,7 +488,7 @@ def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tr
             elif messages_still_pending[neigh]==2: # this node is now a leaf so enqueu
                 messages_still_pending[neigh]-=1
                 # print(node, neigh, sub_tree_size[node], sub_tree_size[neigh])
-                
+
                 leaves[num_leaves] = neigh
                 num_leaves+=1
                 # print("new_leaf", neigh)
@@ -445,5 +499,37 @@ def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tr
         degree = start_pos[node+1]-start_pos[node]
         messages_still_pending[node]=degree
         sub_tree_size[node]=0
-    assert num_out == degree_pivot, (pivot, num_out, degree_pivot)
-    return out       
+    #assert num_out == degree_pivot, (pivot, num_out, degree_pivot)
+    return out
+
+
+def permutate_closest_neighbors(closest_neighbors):
+    k = closest_neighbors.shape[1]
+    for i in range(closest_neighbors.shape[0]):
+        closest_neighbors[i,:]=closest_neighbors[i,:][np.random.permutation(k)]
+
+
+def apply_basic(df, k):
+    import pandas as pd
+    if isinstance(df, pd.DataFrame):
+        arr = df.to_numpy()
+    else:
+        arr = df
+    # print(arr)
+    dists = compute_dists(arr)
+    # print(dists)
+    closest_neighbors = get_k_closest(dists, k)
+    permutate_closest_neighbors(closest_neighbors)
+    # print(closest_neighbors)
+    components, edges = forest2(closest_neighbors)
+    return components, edges
+
+
+def get_partitions_multivariate_poly(df, k):
+    components, edges = apply_basic(df, k)
+    result = decompose_components(components, edges, k, len(df))
+
+    out = np.empty(len(df), dtype=np.int64)
+    for i, (steiner, comp) in enumerate(result):
+        out[list(set(comp)-set(steiner))]=i
+    return out

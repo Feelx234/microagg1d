@@ -144,3 +144,9 @@ notebooks
 *.csv
 NOTES.txt
 help.txt
+datasets/us+census+data+1990/*
+datasets/us+census+data+1990.zip
+datasets/pppub19.csv.zip
+datasets/cardiotocography.zip
+datasets/cardiotocography/CTG.xls
+*.pkl
