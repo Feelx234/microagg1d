@@ -82,9 +82,16 @@ def filter_edges(edges, keep_nodes):
             n+=1
     return out_edges[:n,:]
 
+def compute_dists(df):
+    import pandas as pd
+    if isinstance(df, pd.DataFrame):
+        arr = df.to_numpy()
+    else:
+        arr = df
+    return _compute_dists(arr)
 
 @njit(cache=True)
-def compute_dists(arr):
+def _compute_dists(arr):
     n, d = arr.shape
     dist = np.full((n,n),np.inf,dtype=np.float64)
     for i in range(n):
@@ -275,7 +282,11 @@ def decompose_components(components, edges, k, num_nodes, forbid_overlap=True):
             continue
         for steiners, comp in res:
             # print("out", comp)
-            if len(comp)-len(steiners) > max(2*k-1, 3*k-5):
+            if forbid_overlap:
+                size = len(comp)-len(steiners)
+            else:
+                size = len(comp)
+            if  size > max(2*k-1, 3*k-5):
                 candidate_components.append((steiners, comp))
             else:
                 final_components.append((steiners, comp))
@@ -307,7 +318,10 @@ def list_to_array(l):
 def split_component(steiners, component, k, start_pos, neighbors, messages_still_pending, sub_tree_size, forbid_overlap):
     component = np.random.permutation(component)
     # print(component)
-    s = len(component) - len(steiners)
+    if forbid_overlap:
+        s = len(component) - len(steiners)
+    else:
+        s = len(component)
     l = List()
 
     if s <= max(2*k-1, 3*k-5):
@@ -323,7 +337,7 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
             continue
         if degree_pivot==1:
             continue
-        sub_tree_sizes = hang_tree(pivot, component, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners)
+        sub_tree_sizes = hang_tree(pivot, component, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners, forbid_overlap)
         # print(sub_tree_sizes)
         j = np.argmax(sub_tree_sizes[:,1])
         v = sub_tree_sizes[j,0]
@@ -337,7 +351,12 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
             comp2 = find_subtree(v, pivot, start_pos, neighbors, sub_tree_size, component)
             l.append(clean_steiners(steiners1, comp1))
             l.append(clean_steiners(steiners2, comp2))
-            # print("A", pivot, List(l))
+            if forbid_overlap:
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            else:
+                assert len(comp1) >=k#, (comp1, comp2, phi, s-phi, pivot, v)
+                assert len(comp2) >=k
             return l
         elif s-phi == k-1:
             if forbid_overlap and v in steiners:
@@ -352,8 +371,12 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
             steiners2.append(v)
             l.append(clean_steiners(steiners1, comp1))
             l.append(clean_steiners(steiners2, comp2))
-            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
-            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            if forbid_overlap:
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            else:
+                assert len(comp1) >=k
+                assert len(comp2) >=k
             #print("B", pivot, v, List(l))
             return l
         elif phi == k-1:
@@ -365,8 +388,12 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
             steiners1.append(v)
             l.append(clean_steiners(steiners1, comp1))
             l.append(clean_steiners(steiners2, comp2))
-            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
-            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            if forbid_overlap:
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2))
+            else:
+                assert len(comp1) >=k
+                assert len(comp2) >=k
             # print("C", pivot, List(l))
             return l
         else:
@@ -419,9 +446,12 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
                         i_comp2+=1
             #assert i_comp1 == len(comp1)
             #assert i_comp2 == len(comp2), (i_comp1, i_comp2, len(comp1), len(comp2), comp2, s, comp1_size, sub_tree_sizes)
-
-            assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
-            assert len(set(comp2)-set(steiners2))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
+            if forbid_overlap:
+                assert len(set(comp1)-set(steiners1))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
+                assert len(set(comp2)-set(steiners2))>=k# , (s, len(comp1), len(comp2), comp1, steiners1, comp2, steiners2, sub_tree_sizes[order,:])
+            else:
+                assert len(comp1) >=k
+                assert len(comp2) >=k
             l.append(clean_steiners(steiners1, comp1[:i_comp1]))
             l.append(clean_steiners(steiners2, comp2[:i_comp2]))
             return l
@@ -438,7 +468,7 @@ def split_component(steiners, component, k, start_pos, neighbors, messages_still
         assert False #, (phi, sub_tree_sizes) # this is not allowed in overlapping MM
 
 @njit()
-def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners):
+def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tree_size, steiners, ignore_steiners):
     # print()
     degree_pivot = start_pos[pivot+1]-start_pos[pivot]
     out = np.empty((degree_pivot, 2), dtype=np.int64)
@@ -451,7 +481,10 @@ def hang_tree(pivot, nodes, start_pos, neighbors, messages_still_pending, sub_tr
         if node not in steiners:
             sub_tree_size[node] = 1
         else:
-            sub_tree_size[node] = 0
+            if ignore_steiners:
+                sub_tree_size[node] = 0
+            else:
+                sub_tree_size[node] = 1
         degree_node = start_pos[node+1]-start_pos[node]
         if degree_node!=1:
             continue
@@ -509,14 +542,15 @@ def permutate_closest_neighbors(closest_neighbors):
         closest_neighbors[i,:]=closest_neighbors[i,:][np.random.permutation(k)]
 
 
-def apply_basic(df, k):
+def apply_basic(df, k, dists=None):
     import pandas as pd
     if isinstance(df, pd.DataFrame):
         arr = df.to_numpy()
     else:
         arr = df
     # print(arr)
-    dists = compute_dists(arr)
+    if dists is None:
+        dists = compute_dists(arr)
     # print(dists)
     closest_neighbors = get_k_closest(dists, k)
     permutate_closest_neighbors(closest_neighbors)
@@ -525,11 +559,91 @@ def apply_basic(df, k):
     return components, edges
 
 
-def get_partitions_multivariate_poly(df, k):
-    components, edges = apply_basic(df, k)
-    result = decompose_components(components, edges, k, len(df))
 
-    out = np.empty(len(df), dtype=np.int64)
-    for i, (steiner, comp) in enumerate(result):
-        out[list(set(comp)-set(steiner))]=i
+def additional_split(result, df, k, forbid_overlap):
+    if 3*k-5 <= 2*k-1:
+        return result
+    import pandas as pd
+    if isinstance(df, pd.DataFrame):
+        arr = df.to_numpy()
+    else:
+        arr = df
+
+    out = []
+    for steiner, comp in result:
+        if forbid_overlap:
+            if len(comp)-len(steiner) < 2*k:
+                out.append((steiner, comp))
+                continue
+        else:
+            if len(comp) < 2*k:
+                out.append((steiner, comp))
+                continue
+
+        if forbid_overlap:
+            comp = np.array(list(set(comp)-set(steiner)), dtype=np.int64)
+            steiner = []
+        centroid = np.mean(arr[comp, :],axis=0)
+
+        dists = []
+        for v in comp:
+            dists.append(np.sum(np.square(arr[v,:] - centroid)))
+        u = comp[np.argmax(dists)] # find furthest from centroid
+        u_pos = arr[u,:]
+        dists.clear()
+        for v in comp:
+            if v==u:
+                dists.append(np.inf)
+            else:
+                dists.append(np.sum(np.square(arr[v,:] - u_pos)))
+
+        dists = np.array(dists)
+        tmp = np.argsort(dists)[:-1]
+        closest = comp[tmp]
+        comp1 = np.empty(k, dtype=np.int64)
+        comp1[0]=u
+        comp1[1:] = closest[:k-1]
+        comp2 = closest[k-1:]
+        steiners1 = set(steiner).intersection(set(comp1))
+        steiners2 = set(steiner).intersection(set(comp2))
+        assert len(comp1)>=k
+        assert len(comp2)>=k
+        assert len(comp1)<=2*k-1
+        assert len(comp2)<=2*k-1
+        assert len(comp1)+len(comp2)==len(comp)
+        assert set(comp1).union(set(comp2))==set(comp), (comp1, comp2, comp, set(comp1).union(set(comp2)).symmetric_difference(set(comp)))
+        # print(np.array(list(steiners1)).shape)
+        out.append( (np.array(list(steiners1)), comp1))
+        out.append( (np.array(list(steiners2)), comp2))
+    return out
+
+def get_partitions_multivariate_poly(df, k, forbid_overlap=True, dists=None, make_additional_split=True):
+    components, edges = apply_basic(df, k, dists=dists)
+
+    result = decompose_components(components, edges, k, len(df), forbid_overlap)
+    if make_additional_split:
+        result = additional_split(result, df, k, forbid_overlap)
+    if forbid_overlap:
+        out = np.empty(len(df), dtype=np.int64)
+        for i, (steiner, comp) in enumerate(result):
+            out[list(set(comp)-set(steiner))]=i
+        return out
+    else:
+        return result
+
+
+def simple_approx(df, k, dists=None):
+    import pandas as pd
+    if isinstance(df, pd.DataFrame):
+        arr = df.to_numpy()
+    else:
+        arr = df
+    # print(arr)
+    if dists is None:
+        dists = compute_dists(arr)
+    # print(dists)
+    closest_neighbors = get_k_closest(dists, k-1)
+    out = []
+    for i, val in enumerate(closest_neighbors):
+        out.append(([list(val)], np.array([i]+list(val), dtype=np.int64)))
     return out
