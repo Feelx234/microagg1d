@@ -6,9 +6,9 @@
 microagg1d
 ========
 
-A Python library which implements different techniques for optimal univariate microaggregation. The two main parameters that determine the runtime are the length n of the input array and minimal class size k. This package offers both O(n) (fast for large k) and O(kn) (fast for small k) algorithms.
+A Python library which implements different techniques for optimal univariate microaggregation. The two main parameters that determine the runtime are the length n of the input array and minimal class size k. This package offers both $O(n)$ (fast for large k) and $O(kn)$ (fast for small k) algorithms.
 
-The code is written in Python and but moth of the number crunching is happening in compiled code. This is achieved with the [numba](https://numba.pydata.org/) compiler.
+The code is written in Python but most of the number crunching is happening in compiled code. This package thus runs very fast even for large inputs. The compilation is achieved with the [numba](https://numba.pydata.org/) compiler.
 
 Requirements
 ------------
