@@ -7,3 +7,62 @@ build-backend = "setuptools.build_meta"
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
+
+
+[project]
+name = "microagg1d"
+dynamic = ["version"]
+authors = [{ name = "Felix I. Stamm", email = "felix.stamm@rwth-aachen.de" }]
+description = "A package to perform optimal univariate microaggregation for various cost functions."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+license = { file = "LICENSE" }
+dependencies = ['numpy >= 1.23.5', 'numba >= 0.56.4']
+
+[project.optional-dependencies]
+test = ['pytest', 'pytest-cov']
+
+[project.urls]
+"Homepage" = "https://github.com/Feelx234/microagg1d"
+"Bug Tracker" = "https://github.com/Feelx234/microagg1d/issues"
+
+[tool.hatch.build]
+exclude = ["examples", "readme_src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --cov --cov-report html --cov-report term-missing"
+testpaths = ["tests", "tests/cell_flower"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/microagg1d"]
+
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "pragma: no branch okay",
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "pass",
+]
+omit = [
+    "*/algorithms_educational.py",
+    "*/algorithms_old.py",
+    "*/smawk_old.py",
+    "*/multivariat_poly.py",
+    "*/utils_for_test.py",         # Regexes for lines to exclude from consideration
+]

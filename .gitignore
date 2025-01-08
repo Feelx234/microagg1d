@@ -140,7 +140,7 @@ cython_debug/
 
 env
 figures
-notebooks
+old_notebooks
 *.csv
 NOTES.txt
 help.txt
