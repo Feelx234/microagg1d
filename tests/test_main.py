@@ -89,7 +89,7 @@ class TestMain(unittest.TestCase):
         # pylint: disable=redefined-outer-name,reimported,import-outside-toplevel
         from microagg1d import univariate_microaggregation
 
-        x = [5, 1, 1, 1.1, 5, 1, 5.1]
+        x = [6, 2, 0.7, 1.1, 5, 1, 5.1]
 
         clusters = univariate_microaggregation(x, k=3)
 

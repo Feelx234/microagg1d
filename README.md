@@ -8,7 +8,7 @@ microagg1d
 
 A Python library which implements different techniques for optimal univariate microaggregation. The two main parameters that determine the runtime are the length n of the input array and minimal class size k. This package offers both O(n) (fast for large k) and O(kn) (fast for small k) algorithms.
 
-The code is written in Python and relies on the [numba](https://numba.pydata.org/) compiler for speed.
+The code is written in Python and but moth of the number crunching is happening in compiled code. This is achieved with the [numba](https://numba.pydata.org/) compiler.
 
 Requirements
 ------------
@@ -30,12 +30,22 @@ Example Usage
 ```python
 from microagg1d import univariate_microaggregation
 
-x = [5, 1, 1, 1.1, 5, 1, 5.1]
+x = [6, 2, 0.7, 1.1, 5, 1, 5.1]
 
 clusters = univariate_microaggregation(x, k=3)
 
 print(clusters)   # [1 0 0 0 1 0 1]
+```
+The element at the i-th position of `clusters` assigns the i-th element of the input array `x` to its optimal cluster. In our small example, the optimal clustering is achieved with two clusters. The `6` at the first position of `x` is assigned to cluster one together with the `5`and `5.1`.
+All remaining entries are assigned to cluster zero.
 
+
+**Important notice**: On first import the code is compiled once which may take about 30s. On subsequent imports this is no longer necessary and imports are almost instant.
+
+Below we show that one may choose the algorithm used to solve the univariate microaggregation task using the `method` keyword (valid choices are `"auto"`[default], `"simple"`, `"wilber"`, `"galil_park"`, and `"staggered"`).
+Similarly the cost function used to solve the task can be adjusted using the `cost` keyword. Valid choices for the `cost` keyword are `"sse"` (sum of squares error), `"sae"`(sum absolute error), `"maxdist"` (maximum distance), `"roundup"`, and `"rounddown"`.
+
+```python
 # explicitly choose method / algorithm
 clusters2 = univariate_microaggregation(x, k=3, method="wilber")
 
@@ -47,7 +57,7 @@ clusters3 = univariate_microaggregation(x, k=3, cost="sae")
 print(clusters3)   # [1 0 0 0 1 0 1]
 ```
 
-**Important notice**: On first import the the code is compiled once which may take about 30s. On subsequent imports this is no longer necessary and imports are almost instant.
+
 
 Tests
 -----
@@ -59,14 +69,14 @@ Tests are in [tests/](https://github.com/Feelx234/microagg1d/tree/main/tests).
 $ python3 -m pytest .
 ```
 
-Method Details
+Details on the Algorithms
 --------------
 
-Currently the package implements the following methods:
-- `"simple"` [O(nk), faster for small k]
-- `"wilber"` [O(n), faster for larger k]
-- `"galil_park"` [O(n), fewer calls to SMAWK]
-- `"staggered"` [fastest O(n)]
+Currently the package implements the following four algorithms:
+- `"simple"` [$O(nk)$, faster for small k]
+- `"wilber"` [$O(n)$, faster for larger k]
+- `"galil_park"` [$O(n)$, faster for larger k, fewer calls to SMAWK]
+- `"staggered"` [fastest $O(n)$]
 
 By default, the package switches between the simple and wilber method depending on the size of k.
 

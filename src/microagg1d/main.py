@@ -39,10 +39,10 @@ def univariate_microaggregation(x, k, method="auto", stable=1, cost="sse"):
         "staggered",
     ), "invalid method supplied"
     if method == "auto":
-        if k <= 21:  # 21 determined emperically
+        if k <= 21:  # 21 determined empirically
             method = "simple"
         else:
-            method = "wilber"
+            method = "staggered"
 
     order = np.argsort(x)
     x = np.array(x, dtype=np.float64)[order]
