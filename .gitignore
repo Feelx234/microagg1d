@@ -154,3 +154,4 @@ notebooks/SpeedComparison-Copy1.ipynb
 notebooks/Untitled.ipynb
 src/microagg1d/cost.py
 src/microagg1d/datasets.py
+coverage.lcov
