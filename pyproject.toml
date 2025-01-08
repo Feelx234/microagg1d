@@ -38,7 +38,7 @@ exclude = ["notebooks", "figures", "old_notebooks"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --cov --cov-report html --cov-report term-missing"
-testpaths = ["tests", "tests/cell_flower"]
+testpaths = ["./tests"]
 pythonpath = ["src"]
 
 [tool.coverage.run]
