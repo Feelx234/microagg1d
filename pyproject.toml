@@ -146,7 +146,7 @@ passenv =
     HOME
     SETUPTOOLS_*
 extras =
-    testing
+    test
 commands =
     pytest {posargs}
 
