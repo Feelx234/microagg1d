@@ -150,3 +150,7 @@ datasets/pppub19.csv.zip
 datasets/cardiotocography.zip
 datasets/cardiotocography/CTG.xls
 *.pkl
+notebooks/SpeedComparison-Copy1.ipynb
+notebooks/Untitled.ipynb
+src/microagg1d/cost.py
+src/microagg1d/datasets.py

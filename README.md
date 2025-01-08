@@ -82,6 +82,22 @@ See [LICENSE](https://github.com/Feelx234/microagg1d/blob/master/LICENSE).
 
 
 
+Citation
+-----------
+
+This code was created as part of the research for the following publication. If you use this package please cite:
+
+```
+@article{stamm2024faster,
+	title = {Faster optimal univariate microaggregation},
+	url = {https://openreview.net/forum?id=s5lEUtyVly},
+	journal = {Transactions on Machine Learning Research},
+	author = {Stamm, Felix I. and Schaub, Michael T},
+	year = {2024},
+}
+```
+
+
 References
 ----------
 

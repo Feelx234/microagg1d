@@ -1,5 +1,4 @@
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
 build-backend = "setuptools.build_meta"
 
@@ -63,6 +62,7 @@ omit = [
     "*/algorithms_educational.py",
     "*/algorithms_old.py",
     "*/smawk_old.py",
-    "*/multivariat_poly.py",
+    "*/cost.py",
+    "*/multivariate_poly.py",
     "*/utils_for_test.py",         # Regexes for lines to exclude from consideration
 ]
