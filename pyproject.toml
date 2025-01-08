@@ -27,7 +27,7 @@ license = { file = "LICENSE" }
 dependencies = ['numpy >= 1.23.5', 'numba >= 0.56.4']
 
 [project.optional-dependencies]
-test = ['pytest', 'pytest-cov']
+test = ['pytest', 'pytest-cov', 'coverage[toml]']
 
 [project.urls]
 "Homepage" = "https://github.com/Feelx234/microagg1d"
