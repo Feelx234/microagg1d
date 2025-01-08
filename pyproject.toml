@@ -66,3 +66,62 @@ omit = [
     "*/multivariate_poly.py",
     "*/utils_for_test.py",         # Regexes for lines to exclude from consideration
 ]
+
+
+[tool.flake8]
+# Some sane defaults for the code style checker flake8
+max_line_length = 125
+extend_ignore = ["E203", "W503", "E741"]
+# ^  Black-compatible
+#    E203 and W503 have edge cases handled by black
+exclude = [".tox", "build", "dist", ".eggs"]
+
+
+[tool.isort]
+profile = "black"
+known_first_party = ["microagg1d"]
+
+
+[tool.pylint.basic]
+# Good variable names which should always be accepted, separated by a comma.
+good-names = [
+    "R",
+    "D",
+    "T",
+    "D_row",
+    "S",
+    "A",
+    "F",
+    "H",
+    "F_vals",
+    "F_val",
+    "H_vals",
+    "M",
+    "SMALL_VAL",
+    "LARGE_VAL",
+    "MicroaggWilberCalculator_edu",
+    "N_vals",
+    "N",
+    "setUp",
+    "tearDown",
+]
+
+# Good variable names regexes, separated by a comma. If names match any regex,
+# they will always be accepted
+good-names-rgxs = ["^[_a-zGW][_a-z0-9L]?$"]
+
+[tool.pylint.format]
+max-line-length = 225
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "missing-final-newline",
+    "superfluous-parens",
+]
+
+[tool.pylint.main]
+ignore = [".coveragerc"]
+ignore-paths = [".coveragerc|.coveragerc"]
