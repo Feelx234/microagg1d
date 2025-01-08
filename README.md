@@ -73,10 +73,10 @@ Details on the Algorithms
 --------------
 
 Currently the package implements the following four algorithms:
-- `"simple"` [$O(nk)$, faster for small k]
-- `"wilber"` [$O(n)$, faster for larger k]
-- `"galil_park"` [$O(n)$, faster for larger k, fewer calls to SMAWK]
-- `"staggered"` [fastest $O(n)$]
+- `"simple"` [ $O(nk)$, faster for small k ]
+- `"wilber"` [ $O(n)$, faster for larger k ]
+- `"galil_park"` [ $O(n)$, faster for larger k, fewer calls to SMAWK ]
+- `"staggered"` [ fastest $O(n)$ ]
 
 By default, the package switches between the simple and wilber method depending on the size of k.
 
