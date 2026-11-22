@@ -155,3 +155,8 @@ notebooks/Untitled.ipynb
 src/microagg1d/cost.py
 src/microagg1d/datasets.py
 coverage.lcov
+target/
+__pycache__/
+*.so
+dist/
+.pytest_cache/

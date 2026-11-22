@@ -8,12 +8,12 @@ microagg1d
 
 A Python library which implements different techniques for optimal univariate microaggregation. The two main parameters that determine the runtime are the length n of the input array and minimal class size k. This package offers both $O(n)$ (fast for large k) and $O(kn)$ (fast for small k) algorithms.
 
-The code is written in Python but most of the number crunching is happening in compiled code. This package thus runs very fast even for large inputs. The compilation is achieved with the [numba](https://numba.pydata.org/) compiler.
+The number crunching is done in compiled Rust code (shared with [fast1dkmeans](https://github.com/Feelx234/fast1dkmeans) via [oned-core](https://github.com/Feelx234/oned-core)), so this package runs very fast even for large inputs. Prebuilt wheels are provided, no compiler or JIT warm-up is needed.
 
 Requirements
 ------------
 
-*microagg1d* relies on `numpy` and `numba` which currently support python 3.8-3.11.
+*microagg1d* only requires `numpy` and supports python 3.9 and newer. (Versions before 0.5 used `numba`.)
 
 Installation
 ------------

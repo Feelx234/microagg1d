@@ -1,7 +1,18 @@
 import numpy as np
-from numba import njit
 
-from microagg1d.cost_sse import compute_sse_sorted_stable
+
+
+def compute_sse_sorted_stable(v, clusters_sorted):
+    s = 0.0
+    left = 0
+    while left < len(v):
+        r = left
+        while r < len(v) and clusters_sorted[left] == clusters_sorted[r]:
+            r += 1
+        seg = v[left:r]
+        s += float(np.sum((seg - np.mean(seg)) ** 2))
+        left = r
+    return s
 
 
 def _create_sol(n, k, d):
@@ -64,7 +75,6 @@ def create_pair_arange(n, k):
     return arr, solution
 
 
-@njit(cache=True)
 def _apply_epsilon(arr, solution, epsilon):
     assert len(arr) > 0
     d = -1
