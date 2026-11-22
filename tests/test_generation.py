@@ -4,12 +4,11 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from microagg1d.generation import (
+from generation import (
     create_pair_arange,
     create_pair_const_size,
     create_pair_known_sizes,
 )
-from microagg1d.utils_for_test import remove_numba_from_class, restore_to_class
 
 
 class TestArangeGeneration(unittest.TestCase):
@@ -133,17 +132,3 @@ class TestArangeGeneration(unittest.TestCase):
 
         arr, _ = create_pair_const_size(9, 3, 0.1)
         assert_array_equal(arr, np.array([0, 0.1, 0.2, 1, 1.1, 1.2, 2, 2.1, 2.2]))
-
-
-class TestArangeGenerationNonCompiled(TestArangeGeneration):
-    def setUp(self):
-        self.cleanup = remove_numba_from_class(
-            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
-        )
-
-    def tearDown(self) -> None:
-        restore_to_class(self.cleanup)
-
-
-if __name__ == "__main__":
-    unittest.main()

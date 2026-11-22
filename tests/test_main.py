@@ -4,9 +4,8 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from microagg1d.generation import create_pair_arange
+from generation import create_pair_arange
 from microagg1d.main import undo_argsort, univariate_microaggregation
-from microagg1d.utils_for_test import remove_numba_from_class, restore_to_class
 
 # use with k=5
 interesting_arr = np.array(
@@ -110,16 +109,6 @@ class TestMain(unittest.TestCase):
         np.testing.assert_array_equal(clusters2, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
 
         np.testing.assert_array_equal(clusters3, [1, 0, 0, 0, 1, 0, 1], f"k={3}")
-
-
-class TestMainNonCompiled(TestMain):
-    def setUp(self):
-        self.cleanup = remove_numba_from_class(
-            self.__class__.__bases__[0], allowed_packages=["microagg1d"]
-        )
-
-    def tearDown(self) -> None:
-        restore_to_class(self.cleanup)
 
 
 if __name__ == "__main__":
