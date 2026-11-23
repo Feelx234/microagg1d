@@ -8,7 +8,7 @@ microagg1d
 
 A Python library which implements different techniques for optimal univariate microaggregation. The two main parameters that determine the runtime are the length n of the input array and minimal class size k. This package offers both $O(n)$ (fast for large k) and $O(kn)$ (fast for small k) algorithms.
 
-The number crunching is done in compiled Rust code (shared with [fast1dkmeans](https://github.com/Feelx234/fast1dkmeans) via [oned-core](https://github.com/Feelx234/oned-core)), so this package runs very fast even for large inputs. Prebuilt wheels are provided, no compiler or JIT warm-up is needed.
+The number crunching is done in compiled Rust code (shared with [fast1dkmeans](https://github.com/Feelx234/fast1dkmeans) via [optimal1d](https://github.com/Feelx234/optimal1d)), so this package runs very fast even for large inputs. Prebuilt wheels are provided, no compiler or JIT warm-up is needed.
 
 Requirements
 ------------
